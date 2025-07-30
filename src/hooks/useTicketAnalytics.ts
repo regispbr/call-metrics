@@ -1,0 +1,257 @@
+import { useMemo } from "react";
+
+interface TicketData {
+  "Tipo de Registro de Serviço": string;
+  "#": number;
+  "Usuário solicitante": string;
+  "Data de requisição": string;
+  "Empresa": string;
+  "Data de encerramento": string;
+  "Prazo de SLA": string;
+  "Status": string;
+  "Categoria": string;
+  "Subcategoria": string;
+  "Tempo de Resposta": string;
+  "Tempo de Solução": string;
+  "Tempo Aguardando Cliente": string;
+  "Tempo Aguardando Fabricante": string;
+  "Título": string;
+  "Equipe de atendimento": string;
+  "Atendente atribuído": string;
+  "contador de Reabertura": number;
+  "Prioridade": string;
+}
+
+export const useTicketAnalytics = (data: TicketData[]) => {
+  return useMemo(() => {
+    if (!data || data.length === 0) {
+      return {
+        totalTickets: 0,
+        avgRequestsPerDay: 0,
+        topDayOfWeek: "N/A",
+        reportsPerCompany: [],
+        ticketsPerAgent: [],
+        ticketsPerTeam: [],
+        avgResponseTime: "00:00",
+        avgSolutionTime: "00:00",
+        reopenedTickets: 0,
+        reopenedPercentage: 0,
+        slaBreachPercentage: 0,
+        ticketsByPriority: [],
+        ticketsByCategory: [],
+        avgWaitingClient: "00:00",
+        avgWaitingManufacturer: "00:00",
+        ticketsByStatus: [],
+        responseTimeByTeam: [],
+        solutionTimeByTeam: [],
+        requestsByDay: [],
+        filterOptions: {
+          empresas: [],
+          status: [],
+          prioridades: [],
+          categorias: [],
+          subcategorias: [],
+          equipesAtendimento: [],
+          atendentes: [],
+          tiposRegistro: [],
+        }
+      };
+    }
+
+    // Helper function to parse time strings
+    const parseTimeToMinutes = (timeStr: string) => {
+      if (!timeStr || timeStr === "00:00") return 0;
+      const parts = timeStr.split(":");
+      return parseInt(parts[0]) * 60 + parseInt(parts[1]);
+    };
+
+    const formatMinutesToTime = (minutes: number) => {
+      const hours = Math.floor(minutes / 60);
+      const mins = minutes % 60;
+      return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+    };
+
+    // Parse dates
+    const parseDate = (dateStr: string) => {
+      const [datePart, timePart] = dateStr.split(" ");
+      const [day, month, year] = datePart.split("-");
+      return new Date(`${year}-${month}-${day}T${timePart}`);
+    };
+
+    // Basic metrics
+    const totalTickets = data.length;
+    
+    // Group by day for average requests
+    const requestsByDay = data.reduce((acc, ticket) => {
+      const date = parseDate(ticket["Data de requisição"]);
+      const dayKey = date.toISOString().split('T')[0];
+      acc[dayKey] = (acc[dayKey] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    const avgRequestsPerDay = Object.keys(requestsByDay).length > 0 
+      ? Math.round(totalTickets / Object.keys(requestsByDay).length)
+      : 0;
+
+    // Day of week analysis
+    const dayOfWeekCount = data.reduce((acc, ticket) => {
+      const date = parseDate(ticket["Data de requisição"]);
+      const dayOfWeek = date.toLocaleDateString('pt-BR', { weekday: 'long' });
+      acc[dayOfWeek] = (acc[dayOfWeek] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    const topDayOfWeek = Object.entries(dayOfWeekCount).reduce((a, b) => 
+      dayOfWeekCount[a[0]] > dayOfWeekCount[b[0]] ? a : b
+    )?.[0] || "N/A";
+
+    // Reports per company
+    const reportsPerCompany = Object.entries(
+      data.reduce((acc, ticket) => {
+        const company = ticket.Empresa || "Não informado";
+        acc[company] = (acc[company] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>)
+    ).map(([name, count]) => ({ name, count }));
+
+    // Tickets per agent
+    const ticketsPerAgent = Object.entries(
+      data.reduce((acc, ticket) => {
+        const agent = ticket["Atendente atribuído"] || "Não atribuído";
+        acc[agent] = (acc[agent] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>)
+    ).map(([name, count]) => ({ name, count }));
+
+    // Tickets per team
+    const ticketsPerTeam = Object.entries(
+      data.reduce((acc, ticket) => {
+        const team = ticket["Equipe de atendimento"] || "Não definido";
+        acc[team] = (acc[team] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>)
+    ).map(([name, count]) => ({ name, count }));
+
+    // Response and solution times
+    const responseTimes = data.map(ticket => parseTimeToMinutes(ticket["Tempo de Resposta"]));
+    const solutionTimes = data.map(ticket => parseTimeToMinutes(ticket["Tempo de Solução"]));
+    const waitingClientTimes = data.map(ticket => parseTimeToMinutes(ticket["Tempo Aguardando Cliente"]));
+    const waitingManufacturerTimes = data.map(ticket => parseTimeToMinutes(ticket["Tempo Aguardando Fabricante"]));
+
+    const avgResponseTime = formatMinutesToTime(
+      Math.round(responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length) || 0
+    );
+    const avgSolutionTime = formatMinutesToTime(
+      Math.round(solutionTimes.reduce((a, b) => a + b, 0) / solutionTimes.length) || 0
+    );
+    const avgWaitingClient = formatMinutesToTime(
+      Math.round(waitingClientTimes.reduce((a, b) => a + b, 0) / waitingClientTimes.length) || 0
+    );
+    const avgWaitingManufacturer = formatMinutesToTime(
+      Math.round(waitingManufacturerTimes.reduce((a, b) => a + b, 0) / waitingManufacturerTimes.length) || 0
+    );
+
+    // Reopened tickets
+    const reopenedTickets = data.filter(ticket => 
+      ticket["contador de Reabertura"] > 0
+    ).length;
+    const reopenedPercentage = Math.round((reopenedTickets / totalTickets) * 100);
+
+    // SLA breach analysis
+    const slaBreachCount = data.filter(ticket => {
+      if (!ticket["Data de encerramento"] || !ticket["Prazo de SLA"]) return false;
+      const closedDate = parseDate(ticket["Data de encerramento"]);
+      const slaDate = parseDate(ticket["Prazo de SLA"]);
+      return closedDate > slaDate;
+    }).length;
+    const slaBreachPercentage = Math.round((slaBreachCount / totalTickets) * 100);
+
+    // Tickets by priority
+    const ticketsByPriority = Object.entries(
+      data.reduce((acc, ticket) => {
+        const priority = ticket.Prioridade || "Não definido";
+        acc[priority] = (acc[priority] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>)
+    ).map(([name, count]) => ({ name, count }));
+
+    // Tickets by category and subcategory
+    const ticketsByCategory = Object.entries(
+      data.reduce((acc, ticket) => {
+        const category = `${ticket.Categoria || "N/A"} > ${ticket.Subcategoria || "N/A"}`;
+        acc[category] = (acc[category] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>)
+    ).map(([name, count]) => ({ name, count }));
+
+    // Tickets by status
+    const ticketsByStatus = Object.entries(
+      data.reduce((acc, ticket) => {
+        const status = ticket.Status || "Não definido";
+        acc[status] = (acc[status] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>)
+    ).map(([name, count]) => ({ name, count }));
+
+    // Response time by team
+    const responseTimeByTeam = Object.entries(
+      data.reduce((acc, ticket) => {
+        const team = ticket["Equipe de atendimento"] || "Não definido";
+        if (!acc[team]) acc[team] = [];
+        acc[team].push(parseTimeToMinutes(ticket["Tempo de Resposta"]));
+        return acc;
+      }, {} as Record<string, number[]>)
+    ).map(([team, times]) => ({
+      team,
+      avgTime: formatMinutesToTime(Math.round(times.reduce((a, b) => a + b, 0) / times.length))
+    }));
+
+    // Solution time by team
+    const solutionTimeByTeam = Object.entries(
+      data.reduce((acc, ticket) => {
+        const team = ticket["Equipe de atendimento"] || "Não definido";
+        if (!acc[team]) acc[team] = [];
+        acc[team].push(parseTimeToMinutes(ticket["Tempo de Solução"]));
+        return acc;
+      }, {} as Record<string, number[]>)
+    ).map(([team, times]) => ({
+      team,
+      avgTime: formatMinutesToTime(Math.round(times.reduce((a, b) => a + b, 0) / times.length))
+    }));
+
+    // Filter options
+    const filterOptions = {
+      empresas: [...new Set(data.map(d => d.Empresa).filter(Boolean))],
+      status: [...new Set(data.map(d => d.Status).filter(Boolean))],
+      prioridades: [...new Set(data.map(d => d.Prioridade).filter(Boolean))],
+      categorias: [...new Set(data.map(d => d.Categoria).filter(Boolean))],
+      subcategorias: [...new Set(data.map(d => d.Subcategoria).filter(Boolean))],
+      equipesAtendimento: [...new Set(data.map(d => d["Equipe de atendimento"]).filter(Boolean))],
+      atendentes: [...new Set(data.map(d => d["Atendente atribuído"]).filter(Boolean))],
+      tiposRegistro: [...new Set(data.map(d => d["Tipo de Registro de Serviço"]).filter(Boolean))],
+    };
+
+    return {
+      totalTickets,
+      avgRequestsPerDay,
+      topDayOfWeek,
+      reportsPerCompany,
+      ticketsPerAgent,
+      ticketsPerTeam,
+      avgResponseTime,
+      avgSolutionTime,
+      reopenedTickets,
+      reopenedPercentage,
+      slaBreachPercentage,
+      ticketsByPriority,
+      ticketsByCategory,
+      avgWaitingClient,
+      avgWaitingManufacturer,
+      ticketsByStatus,
+      responseTimeByTeam,
+      solutionTimeByTeam,
+      requestsByDay: Object.entries(requestsByDay).map(([date, count]) => ({ date, count })),
+      filterOptions,
+    };
+  }, [data]);
+};
