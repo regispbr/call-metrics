@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Filter, X } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Filter, X, ChevronDown } from "lucide-react";
 
 interface FilterOptions {
   empresas: string[];
@@ -18,14 +19,14 @@ interface FilterOptions {
 }
 
 interface ActiveFilters {
-  empresa?: string;
-  status?: string;
-  prioridade?: string;
-  categoria?: string;
-  subcategoria?: string;
-  equipeAtendimento?: string;
-  atendente?: string;
-  tipoRegistro?: string;
+  empresas?: string[];
+  status?: string[];
+  prioridades?: string[];
+  categorias?: string[];
+  subcategorias?: string[];
+  equipesAtendimento?: string[];
+  atendentes?: string[];
+  tiposRegistro?: string[];
   dataInicio?: string;
   dataFim?: string;
 }
@@ -45,10 +46,29 @@ export const DashboardFilters = ({
 
   const handleFilterChange = (key: keyof ActiveFilters, value: string) => {
     const newFilters = { ...activeFilters };
-    if (value === "all" || value === "") {
-      delete newFilters[key];
+    if (key === "dataInicio" || key === "dataFim") {
+      if (value === "") {
+        delete newFilters[key];
+      } else {
+        newFilters[key] = value;
+      }
+    }
+    onFiltersChange(newFilters);
+  };
+
+  const handleMultiSelectChange = (key: keyof ActiveFilters, value: string, checked: boolean) => {
+    const newFilters = { ...activeFilters };
+    const currentValues = (newFilters[key] as string[]) || [];
+    
+    if (checked) {
+      newFilters[key] = [...currentValues, value] as any;
     } else {
-      newFilters[key] = value;
+      const filteredValues = currentValues.filter(v => v !== value);
+      if (filteredValues.length === 0) {
+        delete newFilters[key];
+      } else {
+        newFilters[key] = filteredValues as any;
+      }
     }
     onFiltersChange(newFilters);
   };
@@ -58,6 +78,68 @@ export const DashboardFilters = ({
   };
 
   const hasActiveFilters = Object.keys(activeFilters).length > 0;
+
+  const getSelectedCount = (key: keyof ActiveFilters) => {
+    const values = activeFilters[key] as string[];
+    return values?.length || 0;
+  };
+
+  const getDisplayText = (key: keyof ActiveFilters, placeholder: string) => {
+    const count = getSelectedCount(key);
+    if (count === 0) return placeholder;
+    if (count === 1) return (activeFilters[key] as string[])[0];
+    return `${count} selecionados`;
+  };
+
+  const MultiSelectFilter = ({ 
+    label, 
+    filterKey, 
+    options, 
+    placeholder 
+  }: { 
+    label: string;
+    filterKey: keyof ActiveFilters;
+    options: string[];
+    placeholder: string;
+  }) => (
+    <div className="space-y-2">
+      <Label>{label}</Label>
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button 
+            variant="outline" 
+            className="w-full justify-between text-left font-normal"
+          >
+            <span className="truncate">
+              {getDisplayText(filterKey, placeholder)}
+            </span>
+            <ChevronDown className="h-4 w-4 opacity-50" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-64 p-0" align="start">
+          <div className="max-h-64 overflow-y-auto p-2">
+            {options.map((option) => (
+              <div key={option} className="flex items-center space-x-2 p-2 hover:bg-accent rounded-sm">
+                <Checkbox
+                  id={`${filterKey}-${option}`}
+                  checked={(activeFilters[filterKey] as string[])?.includes(option) || false}
+                  onCheckedChange={(checked) => 
+                    handleMultiSelectChange(filterKey, option, checked as boolean)
+                  }
+                />
+                <label 
+                  htmlFor={`${filterKey}-${option}`}
+                  className="text-sm flex-1 cursor-pointer"
+                >
+                  {option}
+                </label>
+              </div>
+            ))}
+          </div>
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
 
   return (
     <Card className="w-full">
@@ -112,101 +194,47 @@ export const DashboardFilters = ({
               />
             </div>
 
-            {/* Empresa */}
-            <div className="space-y-2">
-              <Label>Empresa</Label>
-              <Select value={activeFilters.empresa || "all"} onValueChange={(value) => handleFilterChange("empresa", value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Todas as empresas" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas as empresas</SelectItem>
-                  {filterOptions.empresas.map((empresa) => (
-                    <SelectItem key={empresa} value={empresa}>{empresa}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <MultiSelectFilter
+              label="Empresa"
+              filterKey="empresas"
+              options={filterOptions.empresas}
+              placeholder="Todas as empresas"
+            />
 
-            {/* Status */}
-            <div className="space-y-2">
-              <Label>Status</Label>
-              <Select value={activeFilters.status || "all"} onValueChange={(value) => handleFilterChange("status", value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Todos os status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os status</SelectItem>
-                  {filterOptions.status.map((status) => (
-                    <SelectItem key={status} value={status}>{status}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <MultiSelectFilter
+              label="Status"
+              filterKey="status"
+              options={filterOptions.status}
+              placeholder="Todos os status"
+            />
 
-            {/* Prioridade */}
-            <div className="space-y-2">
-              <Label>Prioridade</Label>
-              <Select value={activeFilters.prioridade || "all"} onValueChange={(value) => handleFilterChange("prioridade", value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Todas as prioridades" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas as prioridades</SelectItem>
-                  {filterOptions.prioridades.map((prioridade) => (
-                    <SelectItem key={prioridade} value={prioridade}>{prioridade}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <MultiSelectFilter
+              label="Prioridade"
+              filterKey="prioridades"
+              options={filterOptions.prioridades}
+              placeholder="Todas as prioridades"
+            />
 
-            {/* Categoria */}
-            <div className="space-y-2">
-              <Label>Categoria</Label>
-              <Select value={activeFilters.categoria || "all"} onValueChange={(value) => handleFilterChange("categoria", value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Todas as categorias" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas as categorias</SelectItem>
-                  {filterOptions.categorias.map((categoria) => (
-                    <SelectItem key={categoria} value={categoria}>{categoria}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <MultiSelectFilter
+              label="Categoria"
+              filterKey="categorias"
+              options={filterOptions.categorias}
+              placeholder="Todas as categorias"
+            />
 
-            {/* Equipe de Atendimento */}
-            <div className="space-y-2">
-              <Label>Equipe</Label>
-              <Select value={activeFilters.equipeAtendimento || "all"} onValueChange={(value) => handleFilterChange("equipeAtendimento", value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Todas as equipes" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas as equipes</SelectItem>
-                  {filterOptions.equipesAtendimento.map((equipe) => (
-                    <SelectItem key={equipe} value={equipe}>{equipe}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <MultiSelectFilter
+              label="Equipe"
+              filterKey="equipesAtendimento"
+              options={filterOptions.equipesAtendimento}
+              placeholder="Todas as equipes"
+            />
 
-            {/* Atendente */}
-            <div className="space-y-2">
-              <Label>Atendente</Label>
-              <Select value={activeFilters.atendente || "all"} onValueChange={(value) => handleFilterChange("atendente", value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Todos os atendentes" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os atendentes</SelectItem>
-                  {filterOptions.atendentes.map((atendente) => (
-                    <SelectItem key={atendente} value={atendente}>{atendente}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <MultiSelectFilter
+              label="Atendente"
+              filterKey="atendentes"
+              options={filterOptions.atendentes}
+              placeholder="Todos os atendentes"
+            />
           </div>
         </CardContent>
       )}

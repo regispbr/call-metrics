@@ -51,23 +51,23 @@ const Index = () => {
         if (!value) continue;
         
         switch (key) {
-          case 'empresa':
-            if (ticket.Empresa !== value) return false;
+          case 'empresas':
+            if (Array.isArray(value) && value.length && !value.includes(ticket.Empresa)) return false;
             break;
           case 'status':
-            if (ticket.Status !== value) return false;
+            if (Array.isArray(value) && value.length && !value.includes(ticket.Status)) return false;
             break;
-          case 'prioridade':
-            if (ticket.Prioridade !== value) return false;
+          case 'prioridades':
+            if (Array.isArray(value) && value.length && !value.includes(ticket.Prioridade)) return false;
             break;
-          case 'categoria':
-            if (ticket.Categoria !== value) return false;
+          case 'categorias':
+            if (Array.isArray(value) && value.length && !value.includes(ticket.Categoria)) return false;
             break;
-          case 'equipeAtendimento':
-            if (ticket["Equipe de atendimento"] !== value) return false;
+          case 'equipesAtendimento':
+            if (Array.isArray(value) && value.length && !value.includes(ticket["Equipe de atendimento"])) return false;
             break;
-          case 'atendente':
-            if (ticket["Atendente atribuído"] !== value) return false;
+          case 'atendentes':
+            if (Array.isArray(value) && value.length && !value.includes(ticket["Atendente atribuído"])) return false;
             break;
           case 'dataInicio':
             const ticketDate = new Date(ticket["Data de requisição"].split(" ")[0].split("-").reverse().join("-"));
