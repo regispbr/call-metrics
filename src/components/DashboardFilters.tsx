@@ -4,8 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Filter, X, ChevronDown, Check } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Filter, X } from "lucide-react";
 
 interface FilterOptions {
   empresas: string[];
@@ -43,9 +43,10 @@ export const DashboardFilters = ({
   activeFilters 
 }: DashboardFiltersProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [pendingFilters, setPendingFilters] = useState<ActiveFilters>(activeFilters);
 
   const handleFilterChange = (key: keyof ActiveFilters, value: string) => {
-    const newFilters = { ...activeFilters };
+    const newFilters = { ...pendingFilters };
     if (key === "dataInicio" || key === "dataFim") {
       if (value === "") {
         delete newFilters[key];
@@ -53,112 +54,77 @@ export const DashboardFilters = ({
         newFilters[key] = value;
       }
     }
-    onFiltersChange(newFilters);
+    setPendingFilters(newFilters);
   };
 
-  const handleMultiSelectChange = (key: keyof ActiveFilters, value: string, event: React.MouseEvent) => {
-    const newFilters = { ...activeFilters };
+  const handleMultiSelectChange = (key: keyof ActiveFilters, value: string, checked: boolean) => {
+    const newFilters = { ...pendingFilters };
     const currentValues = (newFilters[key] as string[]) || [];
     
-    // Se Ctrl está pressionado, adiciona/remove da seleção
-    if (event.ctrlKey || event.metaKey) {
-      if (currentValues.includes(value)) {
-        // Remove se já estava selecionado
-        const filteredValues = currentValues.filter(v => v !== value);
-        if (filteredValues.length === 0) {
-          delete newFilters[key];
-        } else {
-          newFilters[key] = filteredValues as any;
-        }
-      } else {
-        // Adiciona à seleção
-        newFilters[key] = [...currentValues, value] as any;
-      }
+    if (checked) {
+      newFilters[key] = [...currentValues, value] as any;
     } else {
-      // Se Ctrl não está pressionado, seleciona apenas este item
-      if (currentValues.length === 1 && currentValues[0] === value) {
-        // Se clicou no único item selecionado, deseleciona tudo
+      const filteredValues = currentValues.filter(v => v !== value);
+      if (filteredValues.length === 0) {
         delete newFilters[key];
       } else {
-        // Seleciona apenas este item
-        newFilters[key] = [value] as any;
+        newFilters[key] = filteredValues as any;
       }
     }
     
-    onFiltersChange(newFilters);
+    setPendingFilters(newFilters);
+  };
+
+  const applyFilters = () => {
+    onFiltersChange(pendingFilters);
   };
 
   const clearAllFilters = () => {
+    setPendingFilters({});
     onFiltersChange({});
   };
 
   const hasActiveFilters = Object.keys(activeFilters).length > 0;
 
   const getSelectedCount = (key: keyof ActiveFilters) => {
-    const values = activeFilters[key] as string[];
+    const values = pendingFilters[key] as string[];
     return values?.length || 0;
   };
 
-  const getDisplayText = (key: keyof ActiveFilters, placeholder: string) => {
-    const count = getSelectedCount(key);
-    if (count === 0) return placeholder;
-    if (count === 1) return (activeFilters[key] as string[])[0];
-    return `${count} selecionados`;
-  };
-
-  const MultiSelectFilter = ({ 
+  const CheckboxFilter = ({ 
     label, 
     filterKey, 
-    options, 
-    placeholder 
+    options 
   }: { 
     label: string;
     filterKey: keyof ActiveFilters;
     options: string[];
-    placeholder: string;
   }) => {
-    const [open, setOpen] = useState(false);
-    
     return (
       <div className="space-y-2">
-        <Label>{label}</Label>
-        <Popover open={open} onOpenChange={setOpen}>
-          <PopoverTrigger asChild>
-            <Button 
-              variant="outline" 
-              className="w-full justify-between text-left font-normal"
-            >
-              <span className="truncate">
-                {getDisplayText(filterKey, placeholder)}
-              </span>
-              <ChevronDown className="h-4 w-4 opacity-50" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-64 p-0" align="start">
-            <div className="p-2 border-b bg-muted/50 text-xs text-muted-foreground">
-              Clique para selecionar | Ctrl+Clique para múltipla seleção
-            </div>
-            <div className="max-h-64 overflow-y-auto">
-              {options.map((option) => {
-                const isSelected = (activeFilters[filterKey] as string[])?.includes(option) || false;
-                return (
-                  <div 
-                    key={option} 
-                    className={`flex items-center justify-between p-2 hover:bg-accent cursor-pointer transition-colors ${
-                      isSelected ? 'bg-accent' : ''
-                    }`}
-                    onClick={(e) => handleMultiSelectChange(filterKey, option, e)}
-                  >
-                    <span className="text-sm flex-1">{option}</span>
-                    {isSelected && (
-                      <Check className="h-4 w-4 text-primary" />
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </PopoverContent>
-        </Popover>
+        <Label className="text-sm font-medium">{label}</Label>
+        <div className="max-h-32 overflow-y-auto space-y-2 border rounded-md p-2">
+          {options.map((option) => {
+            const isSelected = (pendingFilters[filterKey] as string[])?.includes(option) || false;
+            return (
+              <div key={option} className="flex items-center space-x-2">
+                <Checkbox
+                  id={`${filterKey}-${option}`}
+                  checked={isSelected}
+                  onCheckedChange={(checked) => 
+                    handleMultiSelectChange(filterKey, option, checked as boolean)
+                  }
+                />
+                <label 
+                  htmlFor={`${filterKey}-${option}`}
+                  className="text-sm cursor-pointer flex-1"
+                >
+                  {option}
+                </label>
+              </div>
+            );
+          })}
+        </div>
       </div>
     );
   };
@@ -190,6 +156,12 @@ export const DashboardFilters = ({
             >
               {isExpanded ? "Ocultar" : "Expandir"}
             </Button>
+            <Button 
+              onClick={applyFilters}
+              size="sm"
+            >
+              Aplicar Filtros
+            </Button>
           </div>
         </div>
       </CardHeader>
@@ -202,7 +174,7 @@ export const DashboardFilters = ({
               <Label>Data Início</Label>
               <Input
                 type="date"
-                value={activeFilters.dataInicio || ""}
+                value={pendingFilters.dataInicio || ""}
                 onChange={(e) => handleFilterChange("dataInicio", e.target.value)}
               />
             </div>
@@ -211,51 +183,45 @@ export const DashboardFilters = ({
               <Label>Data Fim</Label>
               <Input
                 type="date"
-                value={activeFilters.dataFim || ""}
+                value={pendingFilters.dataFim || ""}
                 onChange={(e) => handleFilterChange("dataFim", e.target.value)}
               />
             </div>
 
-            <MultiSelectFilter
+            <CheckboxFilter
               label="Empresa"
               filterKey="empresas"
               options={filterOptions.empresas}
-              placeholder="Todas as empresas"
             />
 
-            <MultiSelectFilter
+            <CheckboxFilter
               label="Status"
               filterKey="status"
               options={filterOptions.status}
-              placeholder="Todos os status"
             />
 
-            <MultiSelectFilter
+            <CheckboxFilter
               label="Prioridade"
               filterKey="prioridades"
               options={filterOptions.prioridades}
-              placeholder="Todas as prioridades"
             />
 
-            <MultiSelectFilter
+            <CheckboxFilter
               label="Categoria"
               filterKey="categorias"
               options={filterOptions.categorias}
-              placeholder="Todas as categorias"
             />
 
-            <MultiSelectFilter
+            <CheckboxFilter
               label="Equipe"
               filterKey="equipesAtendimento"
               options={filterOptions.equipesAtendimento}
-              placeholder="Todas as equipes"
             />
 
-            <MultiSelectFilter
+            <CheckboxFilter
               label="Atendente"
               filterKey="atendentes"
               options={filterOptions.atendentes}
-              placeholder="Todos os atendentes"
             />
           </div>
         </CardContent>

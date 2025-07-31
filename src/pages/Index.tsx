@@ -16,8 +16,10 @@ import {
   Pie,
   Cell,
   LineChart,
-  Line
+  Line,
+  Legend
 } from "recharts";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { 
   TicketIcon, 
   TrendingUp, 
@@ -203,128 +205,203 @@ const Index = () => {
           />
         </div>
 
+        {/* Team Resolution Rate */}
+        <ChartCard title="Taxa de Resolução por Equipe (%)" icon={CheckCircle}>
+          <div className="space-y-3">
+            {analytics.teamResolutionRate.map((item, index) => (
+              <div key={index} className="flex justify-between items-center">
+                <span className="text-sm font-medium">{item.team}</span>
+                <span className="text-sm text-muted-foreground">{item.resolutionRate}%</span>
+              </div>
+            ))}
+          </div>
+        </ChartCard>
+
         {/* Charts Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Tickets by Priority */}
           <ChartCard title="Tickets por Prioridade" icon={AlertTriangle}>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={analytics.ticketsByPriority}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="count"
-                >
-                  {analytics.ticketsByPriority.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
+            <div className="flex">
+              <ResponsiveContainer width="60%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={analytics.ticketsByPriority}
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="count"
+                  >
+                    {analytics.ticketsByPriority.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="w-40% p-4">
+                <h4 className="text-sm font-medium mb-2">Legenda</h4>
+                <div className="space-y-1">
+                  {analytics.ticketsByPriority.map((item, index) => (
+                    <div key={index} className="flex items-center gap-2 text-xs">
+                      <div 
+                        className="w-3 h-3 rounded-full" 
+                        style={{ backgroundColor: colors[index % colors.length] }}
+                      />
+                      <span>{item.name}: {item.count}</span>
+                    </div>
                   ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
+                </div>
+              </div>
+            </div>
           </ChartCard>
 
           {/* Tickets by Status */}
           <ChartCard title="Tickets por Status" icon={Activity}>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={analytics.ticketsByStatus}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="count"
-                >
-                  {analytics.ticketsByStatus.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
+            <div className="flex">
+              <ResponsiveContainer width="60%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={analytics.ticketsByStatus}
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="count"
+                  >
+                    {analytics.ticketsByStatus.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="w-40% p-4">
+                <h4 className="text-sm font-medium mb-2">Legenda</h4>
+                <div className="space-y-1">
+                  {analytics.ticketsByStatus.map((item, index) => (
+                    <div key={index} className="flex items-center gap-2 text-xs">
+                      <div 
+                        className="w-3 h-3 rounded-full" 
+                        style={{ backgroundColor: colors[index % colors.length] }}
+                      />
+                      <span>{item.name}: {item.count}</span>
+                    </div>
                   ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
+                </div>
+              </div>
+            </div>
           </ChartCard>
 
           {/* Tickets by Team */}
           <ChartCard title="Tickets por Equipe" icon={Users}>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={analytics.ticketsPerTeam}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis 
-                  dataKey="name" 
-                  tick={{ fontSize: 12 }}
-                  angle={-45}
-                  textAnchor="end"
-                  height={80}
-                />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="count" fill="#8b5cf6" />
-              </BarChart>
-            </ResponsiveContainer>
+            <div className="flex">
+              <ResponsiveContainer width="60%" height={300}>
+                <BarChart data={analytics.ticketsPerTeam}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" hide />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="count" fill="#8b5cf6" />
+                </BarChart>
+              </ResponsiveContainer>
+              <div className="w-40% p-4">
+                <h4 className="text-sm font-medium mb-2">Equipes</h4>
+                <div className="space-y-1 max-h-64 overflow-y-auto">
+                  {analytics.ticketsPerTeam.map((item, index) => (
+                    <div key={index} className="flex justify-between text-xs">
+                      <span className="truncate">{item.name}</span>
+                      <span>{item.count}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           </ChartCard>
 
           {/* Top Agents */}
           <ChartCard title="Top 10 Atendentes" icon={UserCheck}>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={analytics.ticketsPerAgent.slice(0, 10)}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis 
-                  dataKey="name" 
-                  tick={{ fontSize: 12 }}
-                  angle={-45}
-                  textAnchor="end"
-                  height={80}
-                />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="count" fill="#06b6d4" />
-              </BarChart>
-            </ResponsiveContainer>
+            <div className="flex">
+              <ResponsiveContainer width="60%" height={300}>
+                <BarChart data={analytics.ticketsPerAgent.slice(0, 10)}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" hide />
+                  <YAxis />
+                  <Tooltip formatter={(value, name, props) => [
+                    `${value} tickets (${props.payload.percentage}%)`,
+                    'Tickets'
+                  ]} />
+                  <Bar dataKey="count" fill="#06b6d4">
+                    {analytics.ticketsPerAgent.slice(0, 10).map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill="#06b6d4" />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+              <div className="w-40% p-4">
+                <h4 className="text-sm font-medium mb-2">Atendentes</h4>
+                <div className="space-y-1 max-h-64 overflow-y-auto">
+                  {analytics.ticketsPerAgent.slice(0, 10).map((item, index) => (
+                    <div key={index} className="flex justify-between text-xs">
+                      <span className="truncate">{item.name}</span>
+                      <span>{item.count} ({item.percentage}%)</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           </ChartCard>
 
           {/* Categories */}
           <ChartCard title="Tickets por Categoria" icon={BarChart3}>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={analytics.ticketsByCategory.slice(0, 10)}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis 
-                  dataKey="name" 
-                  tick={{ fontSize: 12 }}
-                  angle={-45}
-                  textAnchor="end"
-                  height={80}
-                />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="count" fill="#10b981" />
-              </BarChart>
-            </ResponsiveContainer>
+            <div className="flex">
+              <ResponsiveContainer width="60%" height={300}>
+                <BarChart data={analytics.ticketsByCategory.slice(0, 10)}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" hide />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="count" fill="#10b981" />
+                </BarChart>
+              </ResponsiveContainer>
+              <div className="w-40% p-4">
+                <h4 className="text-sm font-medium mb-2">Categorias</h4>
+                <div className="space-y-1 max-h-64 overflow-y-auto">
+                  {analytics.ticketsByCategory.slice(0, 10).map((item, index) => (
+                    <div key={index} className="flex justify-between text-xs">
+                      <span className="truncate">{item.name}</span>
+                      <span>{item.count}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           </ChartCard>
 
           {/* Companies */}
           <ChartCard title="Tickets por Empresa" icon={Building}>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={analytics.reportsPerCompany.slice(0, 10)}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis 
-                  dataKey="name" 
-                  tick={{ fontSize: 12 }}
-                  angle={-45}
-                  textAnchor="end"
-                  height={80}
-                />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="count" fill="#f59e0b" />
-              </BarChart>
-            </ResponsiveContainer>
+            <div className="flex">
+              <ResponsiveContainer width="60%" height={300}>
+                <BarChart data={analytics.reportsPerCompany.slice(0, 10)}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" hide />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="count" fill="#f59e0b" />
+                </BarChart>
+              </ResponsiveContainer>
+              <div className="w-40% p-4">
+                <h4 className="text-sm font-medium mb-2">Empresas</h4>
+                <div className="space-y-1 max-h-64 overflow-y-auto">
+                  {analytics.reportsPerCompany.slice(0, 10).map((item, index) => (
+                    <div key={index} className="flex justify-between text-xs">
+                      <span className="truncate">{item.name}</span>
+                      <span>{item.count}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           </ChartCard>
         </div>
 
@@ -352,6 +429,58 @@ const Index = () => {
             </div>
           </ChartCard>
         </div>
+
+        {/* Tickets Table */}
+        <ChartCard title="Tickets Filtrados" icon={TicketIcon}>
+          <div className="max-h-96 overflow-y-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>ID</TableHead>
+                  <TableHead>Tipo</TableHead>
+                  <TableHead>Data Solicitação</TableHead>
+                  <TableHead>Empresa</TableHead>
+                  <TableHead>Equipe</TableHead>
+                  <TableHead>T. Resposta</TableHead>
+                  <TableHead>T. Solução</TableHead>
+                  <TableHead>SLA %</TableHead>
+                  <TableHead>Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {analytics.rawData.slice(0, 100).map((ticket, index) => {
+                  const slaPercentage = ticket["Data de encerramento"] && ticket["Prazo de SLA"] 
+                    ? (() => {
+                        const closedDate = new Date(ticket["Data de encerramento"].split(" ")[0].split("-").reverse().join("-"));
+                        const slaDate = new Date(ticket["Prazo de SLA"].split(" ")[0].split("-").reverse().join("-"));
+                        const diffDays = (closedDate.getTime() - slaDate.getTime()) / (1000 * 3600 * 24);
+                        return diffDays <= 0 ? "100%" : "0%";
+                      })()
+                    : "N/A";
+                  
+                  return (
+                    <TableRow key={index}>
+                      <TableCell className="font-mono text-xs">{ticket["#"]}</TableCell>
+                      <TableCell className="text-xs">{ticket["Tipo de Registro de Serviço"]}</TableCell>
+                      <TableCell className="text-xs">{ticket["Data de requisição"].split(" ")[0]}</TableCell>
+                      <TableCell className="text-xs">{ticket.Empresa}</TableCell>
+                      <TableCell className="text-xs">{ticket["Equipe de atendimento"]}</TableCell>
+                      <TableCell className="text-xs">{ticket["Tempo de Resposta"]}</TableCell>
+                      <TableCell className="text-xs">{ticket["Tempo de Solução"]}</TableCell>
+                      <TableCell className="text-xs">{slaPercentage}</TableCell>
+                      <TableCell className="text-xs">{ticket.Status}</TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+            {analytics.rawData.length > 100 && (
+              <div className="text-center text-sm text-muted-foreground p-4">
+                Mostrando 100 de {analytics.rawData.length} tickets
+              </div>
+            )}
+          </div>
+        </ChartCard>
       </div>
     </div>
   );

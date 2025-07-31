@@ -121,7 +121,11 @@ export const useTicketAnalytics = (data: TicketData[]) => {
         acc[agent] = (acc[agent] || 0) + 1;
         return acc;
       }, {} as Record<string, number>)
-    ).map(([name, count]) => ({ name, count }));
+    ).map(([name, count]) => ({ 
+      name, 
+      count, 
+      percentage: ((count / totalTickets) * 100).toFixed(1) 
+    }));
 
     // Tickets per team
     const ticketsPerTeam = Object.entries(
@@ -131,6 +135,22 @@ export const useTicketAnalytics = (data: TicketData[]) => {
         return acc;
       }, {} as Record<string, number>)
     ).map(([name, count]) => ({ name, count }));
+
+    // Team resolution rate
+    const teamResolutionRate = Object.entries(
+      data.reduce((acc, ticket) => {
+        const team = ticket["Equipe de atendimento"] || "Não definido";
+        if (!acc[team]) acc[team] = { total: 0, resolved: 0 };
+        acc[team].total++;
+        if (ticket.Status === "Resolvido" || ticket.Status === "Fechado") {
+          acc[team].resolved++;
+        }
+        return acc;
+      }, {} as Record<string, { total: number; resolved: number }>)
+    ).map(([team, stats]) => ({
+      team,
+      resolutionRate: ((stats.resolved / stats.total) * 100).toFixed(1)
+    }));
 
     // Response and solution times
     const responseTimes = data.map(ticket => parseTimeToMinutes(ticket["Tempo de Resposta"]));
@@ -238,6 +258,7 @@ export const useTicketAnalytics = (data: TicketData[]) => {
       reportsPerCompany,
       ticketsPerAgent,
       ticketsPerTeam,
+      teamResolutionRate,
       avgResponseTime,
       avgSolutionTime,
       reopenedTickets,
@@ -252,6 +273,7 @@ export const useTicketAnalytics = (data: TicketData[]) => {
       solutionTimeByTeam,
       requestsByDay: Object.entries(requestsByDay).map(([date, count]) => ({ date, count })),
       filterOptions,
+      rawData: data,
     };
   }, [data]);
 };
