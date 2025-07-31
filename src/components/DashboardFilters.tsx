@@ -1,11 +1,11 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Filter, X, ChevronDown } from "lucide-react";
+import { Filter, X, ChevronDown, Check } from "lucide-react";
 
 interface FilterOptions {
   empresas: string[];
@@ -56,20 +56,35 @@ export const DashboardFilters = ({
     onFiltersChange(newFilters);
   };
 
-  const handleMultiSelectChange = (key: keyof ActiveFilters, value: string, checked: boolean) => {
+  const handleMultiSelectChange = (key: keyof ActiveFilters, value: string, event: React.MouseEvent) => {
     const newFilters = { ...activeFilters };
     const currentValues = (newFilters[key] as string[]) || [];
     
-    if (checked) {
-      newFilters[key] = [...currentValues, value] as any;
+    // Se Ctrl está pressionado, adiciona/remove da seleção
+    if (event.ctrlKey || event.metaKey) {
+      if (currentValues.includes(value)) {
+        // Remove se já estava selecionado
+        const filteredValues = currentValues.filter(v => v !== value);
+        if (filteredValues.length === 0) {
+          delete newFilters[key];
+        } else {
+          newFilters[key] = filteredValues as any;
+        }
+      } else {
+        // Adiciona à seleção
+        newFilters[key] = [...currentValues, value] as any;
+      }
     } else {
-      const filteredValues = currentValues.filter(v => v !== value);
-      if (filteredValues.length === 0) {
+      // Se Ctrl não está pressionado, seleciona apenas este item
+      if (currentValues.length === 1 && currentValues[0] === value) {
+        // Se clicou no único item selecionado, deseleciona tudo
         delete newFilters[key];
       } else {
-        newFilters[key] = filteredValues as any;
+        // Seleciona apenas este item
+        newFilters[key] = [value] as any;
       }
     }
+    
     onFiltersChange(newFilters);
   };
 
@@ -120,24 +135,27 @@ export const DashboardFilters = ({
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-64 p-0" align="start">
-            <div className="max-h-64 overflow-y-auto p-2">
-              {options.map((option) => (
-                <div key={option} className="flex items-center space-x-2 p-2 hover:bg-accent rounded-sm">
-                  <Checkbox
-                    id={`${filterKey}-${option}`}
-                    checked={(activeFilters[filterKey] as string[])?.includes(option) || false}
-                    onCheckedChange={(checked) => 
-                      handleMultiSelectChange(filterKey, option, checked as boolean)
-                    }
-                  />
-                  <label 
-                    htmlFor={`${filterKey}-${option}`}
-                    className="text-sm flex-1 cursor-pointer"
+            <div className="p-2 border-b bg-muted/50 text-xs text-muted-foreground">
+              Clique para selecionar | Ctrl+Clique para múltipla seleção
+            </div>
+            <div className="max-h-64 overflow-y-auto">
+              {options.map((option) => {
+                const isSelected = (activeFilters[filterKey] as string[])?.includes(option) || false;
+                return (
+                  <div 
+                    key={option} 
+                    className={`flex items-center justify-between p-2 hover:bg-accent cursor-pointer transition-colors ${
+                      isSelected ? 'bg-accent' : ''
+                    }`}
+                    onClick={(e) => handleMultiSelectChange(filterKey, option, e)}
                   >
-                    {option}
-                  </label>
-                </div>
-              ))}
+                    <span className="text-sm flex-1">{option}</span>
+                    {isSelected && (
+                      <Check className="h-4 w-4 text-primary" />
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </PopoverContent>
         </Popover>
