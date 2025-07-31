@@ -101,45 +101,49 @@ export const DashboardFilters = ({
     filterKey: keyof ActiveFilters;
     options: string[];
     placeholder: string;
-  }) => (
-    <div className="space-y-2">
-      <Label>{label}</Label>
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button 
-            variant="outline" 
-            className="w-full justify-between text-left font-normal"
-          >
-            <span className="truncate">
-              {getDisplayText(filterKey, placeholder)}
-            </span>
-            <ChevronDown className="h-4 w-4 opacity-50" />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-64 p-0" align="start">
-          <div className="max-h-64 overflow-y-auto p-2">
-            {options.map((option) => (
-              <div key={option} className="flex items-center space-x-2 p-2 hover:bg-accent rounded-sm">
-                <Checkbox
-                  id={`${filterKey}-${option}`}
-                  checked={(activeFilters[filterKey] as string[])?.includes(option) || false}
-                  onCheckedChange={(checked) => 
-                    handleMultiSelectChange(filterKey, option, checked as boolean)
-                  }
-                />
-                <label 
-                  htmlFor={`${filterKey}-${option}`}
-                  className="text-sm flex-1 cursor-pointer"
-                >
-                  {option}
-                </label>
-              </div>
-            ))}
-          </div>
-        </PopoverContent>
-      </Popover>
-    </div>
-  );
+  }) => {
+    const [open, setOpen] = useState(false);
+    
+    return (
+      <div className="space-y-2">
+        <Label>{label}</Label>
+        <Popover open={open} onOpenChange={setOpen}>
+          <PopoverTrigger asChild>
+            <Button 
+              variant="outline" 
+              className="w-full justify-between text-left font-normal"
+            >
+              <span className="truncate">
+                {getDisplayText(filterKey, placeholder)}
+              </span>
+              <ChevronDown className="h-4 w-4 opacity-50" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-64 p-0" align="start">
+            <div className="max-h-64 overflow-y-auto p-2">
+              {options.map((option) => (
+                <div key={option} className="flex items-center space-x-2 p-2 hover:bg-accent rounded-sm">
+                  <Checkbox
+                    id={`${filterKey}-${option}`}
+                    checked={(activeFilters[filterKey] as string[])?.includes(option) || false}
+                    onCheckedChange={(checked) => 
+                      handleMultiSelectChange(filterKey, option, checked as boolean)
+                    }
+                  />
+                  <label 
+                    htmlFor={`${filterKey}-${option}`}
+                    className="text-sm flex-1 cursor-pointer"
+                  >
+                    {option}
+                  </label>
+                </div>
+              ))}
+            </div>
+          </PopoverContent>
+        </Popover>
+      </div>
+    );
+  };
 
   return (
     <Card className="w-full">
