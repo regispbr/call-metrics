@@ -141,7 +141,7 @@ export const useTicketAnalytics = (data: TicketData[]) => {
     ).map(([name, count]) => ({ name, count }))
     .sort((a, b) => b.count - a.count);
 
-    // Team resolution rate (excluding merged tickets)
+    // Team resolution rate (excluding merged tickets) - based on total tickets
     const teamResolutionRate = Object.entries(
       data.reduce((acc, ticket) => {
         const team = ticket["Equipe de atendimento"] || "Não definido";
@@ -159,7 +159,7 @@ export const useTicketAnalytics = (data: TicketData[]) => {
       }, {} as Record<string, { total: number; resolved: number }>)
     ).map(([team, stats]) => ({
       team,
-      resolutionRate: ((stats.resolved / stats.total) * 100).toFixed(1)
+      resolutionRate: ((stats.resolved / totalTickets) * 100).toFixed(1)
     }));
 
     // Response and solution times
