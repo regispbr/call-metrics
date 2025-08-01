@@ -112,6 +112,10 @@ const Index = () => {
 
   // Filter table data based on table filters
   const filteredTableData = useMemo(() => {
+    if (!analytics.rawData || analytics.rawData.length === 0) {
+      return [];
+    }
+    
     return analytics.rawData.filter(ticket => {
       return (
         (!tableFilters.id || ticket["#"].toString().includes(tableFilters.id)) &&
