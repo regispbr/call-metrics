@@ -227,7 +227,7 @@ const Index = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <MetricCard
             title="% Descumprimento SLA"
-            value={`${analytics.slaBreachPercentage}%`}
+            value={`${analytics.slaBreachCount} (${analytics.slaBreachPercentage}%)`}
             icon={AlertTriangle}
             variant={analytics.slaBreachPercentage > 20 ? "warning" : "success"}
           />

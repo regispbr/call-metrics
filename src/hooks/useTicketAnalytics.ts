@@ -141,13 +141,18 @@ export const useTicketAnalytics = (data: TicketData[]) => {
     ).map(([name, count]) => ({ name, count }))
     .sort((a, b) => b.count - a.count);
 
-    // Team resolution rate
+    // Team resolution rate (excluding merged tickets)
     const teamResolutionRate = Object.entries(
       data.reduce((acc, ticket) => {
         const team = ticket["Equipe de atendimento"] || "Não definido";
+        const status = ticket.Status;
+        
+        // Skip merged tickets
+        if (status === "Mesclado") return acc;
+        
         if (!acc[team]) acc[team] = { total: 0, resolved: 0 };
         acc[team].total++;
-        if (ticket.Status === "Resolvido" || ticket.Status === "Fechado") {
+        if (status === "Resolvido" || status === "Fechado" || status === "Encerrado") {
           acc[team].resolved++;
         }
         return acc;
@@ -298,6 +303,7 @@ export const useTicketAnalytics = (data: TicketData[]) => {
       reopenedTickets,
       reopenedPercentage,
       slaBreachPercentage,
+      slaBreachCount,
       ticketsByPriority,
       ticketsByCategory,
       avgWaitingClient,
