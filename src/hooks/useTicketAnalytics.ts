@@ -191,6 +191,18 @@ export const useTicketAnalytics = (data: TicketData[]) => {
     }).length;
     const slaBreachPercentage = Math.round((slaBreachCount / totalTickets) * 100);
 
+    // Priority order helper function
+    const getPriorityOrder = (priority: string) => {
+      const orderMap: Record<string, number> = {
+        'Crítico': 1, 'P1': 1,
+        'Alto': 2, 'P2': 2, 
+        'Médio': 3, 'P3': 3,
+        'Baixo': 4, 'P4': 4,
+        'Planejado': 5, 'P5': 5
+      };
+      return orderMap[priority] || 999;
+    };
+
     // Tickets by priority (sorted by priority order, then by count)
     const ticketsByPriority = Object.entries(
       data.reduce((acc, ticket) => {
@@ -260,17 +272,6 @@ export const useTicketAnalytics = (data: TicketData[]) => {
       return hoursUntilSLA <= 2 && hoursUntilSLA > 0;
     });
 
-    // Priority order helper
-    const getPriorityOrder = (priority: string) => {
-      const orderMap: Record<string, number> = {
-        'Crítico': 1, 'P1': 1,
-        'Alto': 2, 'P2': 2, 
-        'Médio': 3, 'P3': 3,
-        'Baixo': 4, 'P4': 4,
-        'Planejado': 5, 'P5': 5
-      };
-      return orderMap[priority] || 999;
-    };
 
     // Filter options with sorting
     const filterOptions = {
