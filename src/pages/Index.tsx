@@ -20,6 +20,8 @@ import {
   Legend
 } from "recharts";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
   TicketIcon, 
   TrendingUp, 
@@ -35,12 +37,24 @@ import {
   Timer,
   RotateCcw,
   TrendingDown,
-  Activity
+  Activity,
+  Filter,
+  Search
 } from "lucide-react";
 
 const Index = () => {
   const [ticketData, setTicketData] = useState<any[]>([]);
   const [activeFilters, setActiveFilters] = useState({});
+  const [tableFilters, setTableFilters] = useState({
+    id: "",
+    tipo: "",
+    dataRequisicao: "",
+    titulo: "",
+    empresa: "",
+    equipe: "",
+    atendente: "",
+    status: ""
+  });
 
   // Filter data based on active filters
   const filteredData = useMemo(() => {
@@ -94,7 +108,23 @@ const Index = () => {
     setActiveFilters({});
   };
 
-  const colors = ['#8b5cf6', '#06b6d4', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
+  const colors = ['#8b5cf6', '#06b6d4', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#14b8a6', '#f97316', '#84cc16', '#8b5cf6'];
+
+  // Filter table data based on table filters
+  const filteredTableData = useMemo(() => {
+    return analytics.rawData.filter(ticket => {
+      return (
+        (!tableFilters.id || ticket["#"].toString().includes(tableFilters.id)) &&
+        (!tableFilters.tipo || ticket["Tipo de Registro de Serviço"].toLowerCase().includes(tableFilters.tipo.toLowerCase())) &&
+        (!tableFilters.dataRequisicao || ticket["Data de requisição"].includes(tableFilters.dataRequisicao)) &&
+        (!tableFilters.titulo || ticket["Título"].toLowerCase().includes(tableFilters.titulo.toLowerCase())) &&
+        (!tableFilters.empresa || ticket.Empresa.toLowerCase().includes(tableFilters.empresa.toLowerCase())) &&
+        (!tableFilters.equipe || ticket["Equipe de atendimento"].toLowerCase().includes(tableFilters.equipe.toLowerCase())) &&
+        (!tableFilters.atendente || ticket["Atendente atribuído"].toLowerCase().includes(tableFilters.atendente.toLowerCase())) &&
+        (!tableFilters.status || ticket.Status.toLowerCase().includes(tableFilters.status.toLowerCase()))
+      );
+    });
+  }, [analytics.rawData, tableFilters]);
 
   if (!ticketData.length) {
     return (
@@ -190,7 +220,7 @@ const Index = () => {
         </div>
 
         {/* SLA Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <MetricCard
             title="% Descumprimento SLA"
             value={`${analytics.slaBreachPercentage}%`}
@@ -203,7 +233,43 @@ const Index = () => {
             icon={TrendingDown}
             variant={analytics.reopenedPercentage > 10 ? "warning" : "success"}
           />
+          <MetricCard
+            title="Tickets Próximos ao SLA"
+            value={`${analytics.nearSLACount}`}
+            icon={Clock}
+            variant={analytics.nearSLACount > 0 ? "warning" : "success"}
+          />
         </div>
+
+        {/* Tickets Near SLA */}
+        {analytics.nearSLACount > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Clock className="h-5 w-5" />
+                Tickets Próximos ao Vencimento do SLA (próximas 2 horas)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2 max-h-48 overflow-y-auto">
+                {analytics.ticketsNearSLA.map((ticket, index) => (
+                  <div key={index} className="flex justify-between items-center p-2 bg-muted rounded-md">
+                    <div>
+                      <span className="font-medium">#{ticket["#"]}</span> - {ticket["Título"]}
+                      <div className="text-xs text-muted-foreground">
+                        {ticket.Empresa} | {ticket["Equipe de atendimento"]}
+                      </div>
+                    </div>
+                    <div className="text-xs text-right">
+                      <div>SLA: {ticket["Prazo de SLA"]}</div>
+                      <div className="text-warning">Próximo ao vencimento</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Team Resolution Rate */}
         <ChartCard title="Taxa de Resolução por Equipe (%)" icon={CheckCircle}>
@@ -302,7 +368,11 @@ const Index = () => {
                   <XAxis dataKey="name" hide />
                   <YAxis />
                   <Tooltip />
-                  <Bar dataKey="count" fill="#8b5cf6" />
+                  <Bar dataKey="count">
+                    {analytics.ticketsPerTeam.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
+                    ))}
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
               <div className="w-40% p-4">
@@ -331,9 +401,9 @@ const Index = () => {
                     `${value} tickets (${props.payload.percentage}%)`,
                     'Tickets'
                   ]} />
-                  <Bar dataKey="count" fill="#06b6d4">
+                  <Bar dataKey="count">
                     {analytics.ticketsPerAgent.slice(0, 10).map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill="#06b6d4" />
+                      <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
                     ))}
                   </Bar>
                 </BarChart>
@@ -361,7 +431,11 @@ const Index = () => {
                   <XAxis dataKey="name" hide />
                   <YAxis />
                   <Tooltip />
-                  <Bar dataKey="count" fill="#10b981" />
+                  <Bar dataKey="count">
+                    {analytics.ticketsByCategory.slice(0, 10).map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
+                    ))}
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
               <div className="w-40% p-4">
@@ -387,7 +461,11 @@ const Index = () => {
                   <XAxis dataKey="name" hide />
                   <YAxis />
                   <Tooltip />
-                  <Bar dataKey="count" fill="#f59e0b" />
+                  <Bar dataKey="count">
+                    {analytics.reportsPerCompany.slice(0, 10).map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
+                    ))}
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
               <div className="w-40% p-4">
@@ -431,54 +509,121 @@ const Index = () => {
         </div>
 
         {/* Tickets Table */}
-        <ChartCard title="Tickets Filtrados" icon={TicketIcon}>
-          <div className="max-h-96 overflow-y-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>ID</TableHead>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Data Solicitação</TableHead>
-                  <TableHead>Empresa</TableHead>
-                  <TableHead>Equipe</TableHead>
-                  <TableHead>T. Resposta</TableHead>
-                  <TableHead>T. Solução</TableHead>
-                  <TableHead>SLA %</TableHead>
-                  <TableHead>Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {analytics.rawData.slice(0, 100).map((ticket, index) => {
-                  const slaPercentage = ticket["Data de encerramento"] && ticket["Prazo de SLA"] 
-                    ? (() => {
-                        const closedDate = new Date(ticket["Data de encerramento"].split(" ")[0].split("-").reverse().join("-"));
-                        const slaDate = new Date(ticket["Prazo de SLA"].split(" ")[0].split("-").reverse().join("-"));
-                        const diffDays = (closedDate.getTime() - slaDate.getTime()) / (1000 * 3600 * 24);
-                        return diffDays <= 0 ? "100%" : "0%";
-                      })()
-                    : "N/A";
-                  
-                  return (
-                    <TableRow key={index}>
-                      <TableCell className="font-mono text-xs">{ticket["#"]}</TableCell>
-                      <TableCell className="text-xs">{ticket["Tipo de Registro de Serviço"]}</TableCell>
-                      <TableCell className="text-xs">{ticket["Data de requisição"].split(" ")[0]}</TableCell>
-                      <TableCell className="text-xs">{ticket.Empresa}</TableCell>
-                      <TableCell className="text-xs">{ticket["Equipe de atendimento"]}</TableCell>
-                      <TableCell className="text-xs">{ticket["Tempo de Resposta"]}</TableCell>
-                      <TableCell className="text-xs">{ticket["Tempo de Solução"]}</TableCell>
-                      <TableCell className="text-xs">{slaPercentage}</TableCell>
-                      <TableCell className="text-xs">{ticket.Status}</TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-            {analytics.rawData.length > 100 && (
-              <div className="text-center text-sm text-muted-foreground p-4">
-                Mostrando 100 de {analytics.rawData.length} tickets
-              </div>
-            )}
+        <ChartCard title={`Tickets Filtrados (${filteredTableData.length})`} icon={TicketIcon}>
+          <div className="space-y-4">
+            {/* Table Filters */}
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2">
+              <Input
+                placeholder="Filtrar ID"
+                value={tableFilters.id}
+                onChange={(e) => setTableFilters({...tableFilters, id: e.target.value})}
+                className="text-xs"
+              />
+              <Input
+                placeholder="Filtrar Tipo"
+                value={tableFilters.tipo}
+                onChange={(e) => setTableFilters({...tableFilters, tipo: e.target.value})}
+                className="text-xs"
+              />
+              <Input
+                placeholder="Filtrar Data"
+                value={tableFilters.dataRequisicao}
+                onChange={(e) => setTableFilters({...tableFilters, dataRequisicao: e.target.value})}
+                className="text-xs"
+              />
+              <Input
+                placeholder="Filtrar Título"
+                value={tableFilters.titulo}
+                onChange={(e) => setTableFilters({...tableFilters, titulo: e.target.value})}
+                className="text-xs"
+              />
+              <Input
+                placeholder="Filtrar Empresa"
+                value={tableFilters.empresa}
+                onChange={(e) => setTableFilters({...tableFilters, empresa: e.target.value})}
+                className="text-xs"
+              />
+              <Input
+                placeholder="Filtrar Equipe"
+                value={tableFilters.equipe}
+                onChange={(e) => setTableFilters({...tableFilters, equipe: e.target.value})}
+                className="text-xs"
+              />
+              <Input
+                placeholder="Filtrar Atendente"
+                value={tableFilters.atendente}
+                onChange={(e) => setTableFilters({...tableFilters, atendente: e.target.value})}
+                className="text-xs"
+              />
+              <Input
+                placeholder="Filtrar Status"
+                value={tableFilters.status}
+                onChange={(e) => setTableFilters({...tableFilters, status: e.target.value})}
+                className="text-xs"
+              />
+            </div>
+            
+            <div className="max-h-96 overflow-y-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="min-w-[60px]">ID</TableHead>
+                    <TableHead className="min-w-[120px]">Tipo</TableHead>
+                    <TableHead className="min-w-[120px]">Data Solicitação</TableHead>
+                    <TableHead className="min-w-[200px]">Título</TableHead>
+                    <TableHead className="min-w-[120px]">Empresa</TableHead>
+                    <TableHead className="min-w-[120px]">Equipe</TableHead>
+                    <TableHead className="min-w-[80px]">T. Resposta</TableHead>
+                    <TableHead className="min-w-[80px]">T. Solução</TableHead>
+                    <TableHead className="min-w-[120px]">Prazo SLA</TableHead>
+                    <TableHead className="min-w-[80px]">SLA %</TableHead>
+                    <TableHead className="min-w-[100px]">Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredTableData.slice(0, 200).map((ticket, index) => {
+                    const slaPercentage = ticket["Data de encerramento"] && ticket["Prazo de SLA"] 
+                      ? (() => {
+                          const closedDate = new Date(ticket["Data de encerramento"].split(" ")[0].split("-").reverse().join("-"));
+                          const slaDate = new Date(ticket["Prazo de SLA"].split(" ")[0].split("-").reverse().join("-"));
+                          const timeDiff = slaDate.getTime() - closedDate.getTime();
+                          return timeDiff >= 0 ? 100 : Math.max(0, 100 - Math.abs(timeDiff) / (1000 * 60 * 60 * 24) * 10);
+                        })()
+                      : "N/A";
+                    
+                    return (
+                      <TableRow key={index}>
+                        <TableCell className="font-mono text-xs">{ticket["#"]}</TableCell>
+                        <TableCell className="text-xs">{ticket["Tipo de Registro de Serviço"]}</TableCell>
+                        <TableCell className="text-xs">{ticket["Data de requisição"]}</TableCell>
+                        <TableCell className="text-xs max-w-[200px] truncate" title={ticket["Título"]}>
+                          {ticket["Título"]}
+                        </TableCell>
+                        <TableCell className="text-xs">{ticket.Empresa}</TableCell>
+                        <TableCell className="text-xs">{ticket["Equipe de atendimento"]}</TableCell>
+                        <TableCell className="text-xs">{ticket["Tempo de Resposta"]}</TableCell>
+                        <TableCell className="text-xs">{ticket["Tempo de Solução"]}</TableCell>
+                        <TableCell className="text-xs">{ticket["Prazo de SLA"]}</TableCell>
+                        <TableCell className="text-xs">
+                          {typeof slaPercentage === 'number' ? `${slaPercentage.toFixed(1)}%` : slaPercentage}
+                        </TableCell>
+                        <TableCell className="text-xs">
+                          <span className={`px-2 py-1 rounded-full text-xs ${
+                            ticket.Status === 'Resolvido' || ticket.Status === 'Fechado' 
+                              ? 'bg-green-100 text-green-800' 
+                              : ticket.Status === 'Em andamento' 
+                              ? 'bg-blue-100 text-blue-800'
+                              : 'bg-yellow-100 text-yellow-800'
+                          }`}>
+                            {ticket.Status}
+                          </span>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
           </div>
         </ChartCard>
       </div>
