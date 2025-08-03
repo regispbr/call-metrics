@@ -24,8 +24,9 @@ interface TicketData {
 
 export const useTicketAnalytics = (data: TicketData[]) => {
   return useMemo(() => {
-    // Filter out merged tickets from all calculations
-    const filteredData = data?.filter(ticket => ticket.Status !== "Mesclado") || [];
+    // Filter out tickets with excluded statuses from all calculations
+    const excludedStatuses = ["Mesclado", "Encerrado", "Deletado", "Mesclado e deletado"];
+    const filteredData = data?.filter(ticket => !excludedStatuses.includes(ticket.Status)) || [];
     
     if (!filteredData || filteredData.length === 0) {
       return {

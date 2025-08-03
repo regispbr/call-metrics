@@ -118,8 +118,7 @@ const Index = () => {
     
     return analytics.rawData.filter(ticket => {
       return (
-        // Exclude tickets with status "Encerrado" for active tickets view
-        ticket.Status !== "Encerrado" &&
+        // No need to filter status here as it's already filtered in analytics
         (!tableFilters.id || ticket["#"].toString().includes(tableFilters.id)) &&
         (!tableFilters.tipo || ticket["Tipo de Registro de Serviço"].toLowerCase().includes(tableFilters.tipo.toLowerCase())) &&
         (!tableFilters.dataRequisicao || ticket["Data de requisição"].includes(tableFilters.dataRequisicao)) &&
