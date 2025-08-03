@@ -24,7 +24,10 @@ interface TicketData {
 
 export const useTicketAnalytics = (data: TicketData[]) => {
   return useMemo(() => {
-    if (!data || data.length === 0) {
+    // Filter out merged tickets from all calculations
+    const filteredData = data?.filter(ticket => ticket.Status !== "Mesclado") || [];
+    
+    if (!filteredData || filteredData.length === 0) {
       return {
         totalTickets: 0,
         avgRequestsPerDay: 0,
@@ -82,10 +85,10 @@ export const useTicketAnalytics = (data: TicketData[]) => {
     };
 
     // Basic metrics
-    const totalTickets = data.length;
+    const totalTickets = filteredData.length;
     
     // Group by day for average requests
-    const requestsByDay = data.reduce((acc, ticket) => {
+    const requestsByDay = filteredData.reduce((acc, ticket) => {
       const date = parseDate(ticket["Data de requisição"]);
       const dayKey = date.toISOString().split('T')[0];
       acc[dayKey] = (acc[dayKey] || 0) + 1;
@@ -97,7 +100,7 @@ export const useTicketAnalytics = (data: TicketData[]) => {
       : 0;
 
     // Day of week analysis
-    const dayOfWeekCount = data.reduce((acc, ticket) => {
+    const dayOfWeekCount = filteredData.reduce((acc, ticket) => {
       const date = parseDate(ticket["Data de requisição"]);
       const dayOfWeek = date.toLocaleDateString('pt-BR', { weekday: 'long' });
       acc[dayOfWeek] = (acc[dayOfWeek] || 0) + 1;
@@ -110,7 +113,7 @@ export const useTicketAnalytics = (data: TicketData[]) => {
 
     // Reports per company (sorted by count descending)
     const reportsPerCompany = Object.entries(
-      data.reduce((acc, ticket) => {
+      filteredData.reduce((acc, ticket) => {
         const company = ticket.Empresa || "Não informado";
         acc[company] = (acc[company] || 0) + 1;
         return acc;
@@ -120,7 +123,7 @@ export const useTicketAnalytics = (data: TicketData[]) => {
 
     // Tickets per agent (sorted by count descending)
     const ticketsPerAgent = Object.entries(
-      data.reduce((acc, ticket) => {
+      filteredData.reduce((acc, ticket) => {
         const agent = ticket["Atendente atribuído"] || "Não atribuído";
         acc[agent] = (acc[agent] || 0) + 1;
         return acc;
@@ -133,7 +136,7 @@ export const useTicketAnalytics = (data: TicketData[]) => {
 
     // Tickets per team (sorted by count descending)
     const ticketsPerTeam = Object.entries(
-      data.reduce((acc, ticket) => {
+      filteredData.reduce((acc, ticket) => {
         const team = ticket["Equipe de atendimento"] || "Não definido";
         acc[team] = (acc[team] || 0) + 1;
         return acc;
@@ -141,14 +144,11 @@ export const useTicketAnalytics = (data: TicketData[]) => {
     ).map(([name, count]) => ({ name, count }))
     .sort((a, b) => b.count - a.count);
 
-    // Team resolution rate (excluding merged tickets) - based on total tickets
+    // Team resolution rate - based on total tickets
     const teamResolutionRate = Object.entries(
-      data.reduce((acc, ticket) => {
+      filteredData.reduce((acc, ticket) => {
         const team = ticket["Equipe de atendimento"] || "Não definido";
         const status = ticket.Status;
-        
-        // Skip merged tickets
-        if (status === "Mesclado") return acc;
         
         if (!acc[team]) acc[team] = { total: 0, resolved: 0 };
         acc[team].total++;
@@ -163,10 +163,10 @@ export const useTicketAnalytics = (data: TicketData[]) => {
     }));
 
     // Response and solution times
-    const responseTimes = data.map(ticket => parseTimeToMinutes(ticket["Tempo de Resposta"]));
-    const solutionTimes = data.map(ticket => parseTimeToMinutes(ticket["Tempo de Solução"]));
-    const waitingClientTimes = data.map(ticket => parseTimeToMinutes(ticket["Tempo Aguardando Cliente"]));
-    const waitingManufacturerTimes = data.map(ticket => parseTimeToMinutes(ticket["Tempo Aguardando Fabricante"]));
+    const responseTimes = filteredData.map(ticket => parseTimeToMinutes(ticket["Tempo de Resposta"]));
+    const solutionTimes = filteredData.map(ticket => parseTimeToMinutes(ticket["Tempo de Solução"]));
+    const waitingClientTimes = filteredData.map(ticket => parseTimeToMinutes(ticket["Tempo Aguardando Cliente"]));
+    const waitingManufacturerTimes = filteredData.map(ticket => parseTimeToMinutes(ticket["Tempo Aguardando Fabricante"]));
 
     const avgResponseTime = formatMinutesToTime(
       Math.round(responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length) || 0
@@ -182,13 +182,13 @@ export const useTicketAnalytics = (data: TicketData[]) => {
     );
 
     // Reopened tickets
-    const reopenedTickets = data.filter(ticket => 
+    const reopenedTickets = filteredData.filter(ticket => 
       ticket["contador de Reabertura"] > 0
     ).length;
     const reopenedPercentage = Math.round((reopenedTickets / totalTickets) * 100);
 
     // SLA breach analysis
-    const slaBreachCount = data.filter(ticket => {
+    const slaBreachCount = filteredData.filter(ticket => {
       if (!ticket["Data de encerramento"] || !ticket["Prazo de SLA"]) return false;
       const closedDate = parseDate(ticket["Data de encerramento"]);
       const slaDate = parseDate(ticket["Prazo de SLA"]);
@@ -210,7 +210,7 @@ export const useTicketAnalytics = (data: TicketData[]) => {
 
     // Tickets by priority (sorted by priority order, then by count)
     const ticketsByPriority = Object.entries(
-      data.reduce((acc, ticket) => {
+      filteredData.reduce((acc, ticket) => {
         const priority = ticket.Prioridade || "Não definido";
         acc[priority] = (acc[priority] || 0) + 1;
         return acc;
@@ -223,7 +223,7 @@ export const useTicketAnalytics = (data: TicketData[]) => {
 
     // Tickets by category and subcategory (sorted by count descending)
     const ticketsByCategory = Object.entries(
-      data.reduce((acc, ticket) => {
+      filteredData.reduce((acc, ticket) => {
         const category = `${ticket.Categoria || "N/A"} > ${ticket.Subcategoria || "N/A"}`;
         acc[category] = (acc[category] || 0) + 1;
         return acc;
@@ -233,7 +233,7 @@ export const useTicketAnalytics = (data: TicketData[]) => {
 
     // Tickets by status (sorted by count descending)
     const ticketsByStatus = Object.entries(
-      data.reduce((acc, ticket) => {
+      filteredData.reduce((acc, ticket) => {
         const status = ticket.Status || "Não definido";
         acc[status] = (acc[status] || 0) + 1;
         return acc;
@@ -243,7 +243,7 @@ export const useTicketAnalytics = (data: TicketData[]) => {
 
     // Response time by team
     const responseTimeByTeam = Object.entries(
-      data.reduce((acc, ticket) => {
+      filteredData.reduce((acc, ticket) => {
         const team = ticket["Equipe de atendimento"] || "Não definido";
         if (!acc[team]) acc[team] = [];
         acc[team].push(parseTimeToMinutes(ticket["Tempo de Resposta"]));
@@ -256,7 +256,7 @@ export const useTicketAnalytics = (data: TicketData[]) => {
 
     // Solution time by team
     const solutionTimeByTeam = Object.entries(
-      data.reduce((acc, ticket) => {
+      filteredData.reduce((acc, ticket) => {
         const team = ticket["Equipe de atendimento"] || "Não definido";
         if (!acc[team]) acc[team] = [];
         acc[team].push(parseTimeToMinutes(ticket["Tempo de Solução"]));
@@ -269,7 +269,7 @@ export const useTicketAnalytics = (data: TicketData[]) => {
 
     // Tickets próximos ao SLA (2 horas)
     const now = new Date();
-    const ticketsNearSLA = data.filter(ticket => {
+    const ticketsNearSLA = filteredData.filter(ticket => {
       if (!ticket["Prazo de SLA"] || ticket.Status === "Resolvido" || ticket.Status === "Fechado") return false;
       const slaDate = parseDate(ticket["Prazo de SLA"]);
       const timeDiff = slaDate.getTime() - now.getTime();
@@ -280,14 +280,14 @@ export const useTicketAnalytics = (data: TicketData[]) => {
 
     // Filter options with sorting
     const filterOptions = {
-      empresas: [...new Set(data.map(d => d.Empresa).filter(Boolean))].sort(),
-      status: [...new Set(data.map(d => d.Status).filter(Boolean))].sort(),
-      prioridades: [...new Set(data.map(d => d.Prioridade).filter(Boolean))].sort((a, b) => getPriorityOrder(a) - getPriorityOrder(b)),
-      categorias: [...new Set(data.map(d => d.Categoria).filter(Boolean))].sort(),
-      subcategorias: [...new Set(data.map(d => d.Subcategoria).filter(Boolean))].sort(),
-      equipesAtendimento: [...new Set(data.map(d => d["Equipe de atendimento"]).filter(Boolean))].sort(),
-      atendentes: [...new Set(data.map(d => d["Atendente atribuído"]).filter(Boolean))].sort(),
-      tiposRegistro: [...new Set(data.map(d => d["Tipo de Registro de Serviço"]).filter(Boolean))].sort(),
+      empresas: [...new Set(filteredData.map(d => d.Empresa).filter(Boolean))].sort(),
+      status: [...new Set(filteredData.map(d => d.Status).filter(Boolean))].sort(),
+      prioridades: [...new Set(filteredData.map(d => d.Prioridade).filter(Boolean))].sort((a, b) => getPriorityOrder(a) - getPriorityOrder(b)),
+      categorias: [...new Set(filteredData.map(d => d.Categoria).filter(Boolean))].sort(),
+      subcategorias: [...new Set(filteredData.map(d => d.Subcategoria).filter(Boolean))].sort(),
+      equipesAtendimento: [...new Set(filteredData.map(d => d["Equipe de atendimento"]).filter(Boolean))].sort(),
+      atendentes: [...new Set(filteredData.map(d => d["Atendente atribuído"]).filter(Boolean))].sort(),
+      tiposRegistro: [...new Set(filteredData.map(d => d["Tipo de Registro de Serviço"]).filter(Boolean))].sort(),
     };
 
     return {
@@ -315,7 +315,7 @@ export const useTicketAnalytics = (data: TicketData[]) => {
       ticketsNearSLA,
       nearSLACount: ticketsNearSLA.length,
       filterOptions,
-      rawData: data,
+      rawData: filteredData,
     };
   }, [data]);
 };

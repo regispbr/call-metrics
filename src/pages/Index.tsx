@@ -118,6 +118,8 @@ const Index = () => {
     
     return analytics.rawData.filter(ticket => {
       return (
+        // Exclude tickets with status "Encerrado" for active tickets view
+        ticket.Status !== "Encerrado" &&
         (!tableFilters.id || ticket["#"].toString().includes(tableFilters.id)) &&
         (!tableFilters.tipo || ticket["Tipo de Registro de Serviço"].toLowerCase().includes(tableFilters.tipo.toLowerCase())) &&
         (!tableFilters.dataRequisicao || ticket["Data de requisição"].includes(tableFilters.dataRequisicao)) &&
@@ -513,7 +515,7 @@ const Index = () => {
         </div>
 
         {/* Tickets Table */}
-        <ChartCard title={`Tickets Filtrados (${filteredTableData.length})`} icon={TicketIcon}>
+        <ChartCard title={`Chamados Ativos (${filteredTableData.length})`} icon={TicketIcon}>
           <div className="space-y-4">
             {/* Table Filters */}
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2">
