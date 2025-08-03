@@ -24,8 +24,8 @@ interface TicketData {
 
 export const useTicketAnalytics = (data: TicketData[]) => {
   return useMemo(() => {
-    // Filter out tickets with excluded statuses from all calculations
-    const excludedStatuses = ["Mesclado", "Encerrado", "Deletado", "Mesclado e deletado"];
+    // Filter out tickets with excluded statuses from all calculations  
+    const excludedStatuses = ["Deletado", "Mesclado", "Encerrado", "Mesclado e deletado"];
     const filteredData = data?.filter(ticket => !excludedStatuses.includes(ticket.Status)) || [];
     
     if (!filteredData || filteredData.length === 0) {
@@ -47,6 +47,7 @@ export const useTicketAnalytics = (data: TicketData[]) => {
         avgWaitingClient: "00:00",
         avgWaitingManufacturer: "00:00",
         ticketsByStatus: [],
+        ticketsByServiceType: [],
         responseTimeByTeam: [],
         solutionTimeByTeam: [],
         requestsByDay: [],
@@ -242,6 +243,16 @@ export const useTicketAnalytics = (data: TicketData[]) => {
     ).map(([name, count]) => ({ name, count }))
     .sort((a, b) => b.count - a.count);
 
+    // Tickets by service type (sorted by count descending)
+    const ticketsByServiceType = Object.entries(
+      filteredData.reduce((acc, ticket) => {
+        const serviceType = ticket["Tipo de Registro de Serviço"] || "Não definido";
+        acc[serviceType] = (acc[serviceType] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>)
+    ).map(([name, count]) => ({ name, count }))
+    .sort((a, b) => b.count - a.count);
+
     // Response time by team
     const responseTimeByTeam = Object.entries(
       filteredData.reduce((acc, ticket) => {
@@ -310,6 +321,7 @@ export const useTicketAnalytics = (data: TicketData[]) => {
       avgWaitingClient,
       avgWaitingManufacturer,
       ticketsByStatus,
+      ticketsByServiceType,
       responseTimeByTeam,
       solutionTimeByTeam,
       requestsByDay: Object.entries(requestsByDay).map(([date, count]) => ({ date, count })),

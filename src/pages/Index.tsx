@@ -22,6 +22,9 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import { 
   TicketIcon, 
   TrendingUp, 
@@ -39,7 +42,9 @@ import {
   TrendingDown,
   Activity,
   Filter,
-  Search
+  Search,
+  Download,
+  FileText
 } from "lucide-react";
 
 const Index = () => {
@@ -108,6 +113,47 @@ const Index = () => {
     setActiveFilters({});
   };
 
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    
+    // Title
+    doc.setFontSize(16);
+    doc.text('Relatório de Tickets - Dashboard Estratégico', 14, 20);
+    
+    // Date
+    doc.setFontSize(10);
+    doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')}`, 14, 30);
+    
+    // Summary metrics
+    doc.setFontSize(12);
+    doc.text('Resumo Executivo:', 14, 45);
+    doc.setFontSize(10);
+    doc.text(`Total de Tickets: ${analytics.totalTickets}`, 14, 55);
+    doc.text(`Média por Dia: ${analytics.avgRequestsPerDay}`, 14, 65);
+    doc.text(`Tickets Reabertos: ${analytics.reopenedTickets} (${analytics.reopenedPercentage}%)`, 14, 75);
+    doc.text(`Descumprimento SLA: ${analytics.slaBreachCount} (${analytics.slaBreachPercentage}%)`, 14, 85);
+    
+    // Tickets table
+    const tableData = filteredTableData.slice(0, 50).map(ticket => [
+      ticket["#"],
+      ticket["Tipo de Registro de Serviço"],
+      ticket["Data de requisição"],
+      ticket["Título"].substring(0, 30) + (ticket["Título"].length > 30 ? '...' : ''),
+      ticket.Empresa,
+      ticket.Status
+    ]);
+
+    autoTable(doc, {
+      head: [['ID', 'Tipo', 'Data', 'Título', 'Empresa', 'Status']],
+      body: tableData,
+      startY: 100,
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [139, 92, 246] },
+    });
+
+    doc.save(`relatorio-tickets-${new Date().toISOString().split('T')[0]}.pdf`);
+  };
+
   const colors = ['#8b5cf6', '#06b6d4', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#14b8a6', '#f97316', '#84cc16', '#8b5cf6'];
 
   // Filter table data based on table filters
@@ -118,7 +164,8 @@ const Index = () => {
     
     return analytics.rawData.filter(ticket => {
       return (
-        // No need to filter status here as it's already filtered in analytics
+        // For active tickets, exclude additional statuses
+        !["Deletado", "Mesclado", "Encerrado", "Mesclado e deletado"].includes(ticket.Status) &&
         (!tableFilters.id || ticket["#"].toString().includes(tableFilters.id)) &&
         (!tableFilters.tipo || ticket["Tipo de Registro de Serviço"].toLowerCase().includes(tableFilters.tipo.toLowerCase())) &&
         (!tableFilters.dataRequisicao || ticket["Data de requisição"].includes(tableFilters.dataRequisicao)) &&
@@ -162,7 +209,13 @@ const Index = () => {
               Análise completa de {analytics.totalTickets} tickets
             </p>
           </div>
-          <DataImport onDataImport={handleDataImport} />
+          <div className="flex gap-2">
+            <Button onClick={exportToPDF} variant="outline" size="sm">
+              <Download className="h-4 w-4 mr-2" />
+              Exportar PDF
+            </Button>
+            <DataImport onDataImport={handleDataImport} />
+          </div>
         </div>
 
         {/* Filters */}
@@ -477,6 +530,36 @@ const Index = () => {
                 <h4 className="text-sm font-medium mb-2">Empresas</h4>
                 <div className="space-y-1 max-h-64 overflow-y-auto">
                   {analytics.reportsPerCompany.slice(0, 10).map((item, index) => (
+                    <div key={index} className="flex justify-between text-xs">
+                      <span className="truncate">{item.name}</span>
+                      <span>{item.count}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </ChartCard>
+
+          {/* Service Types */}
+          <ChartCard title="Tickets por Tipo de Registro" icon={FileText}>
+            <div className="flex">
+              <ResponsiveContainer width="60%" height={300}>
+                <BarChart data={analytics.ticketsByServiceType.slice(0, 10)}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" hide />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="count">
+                    {analytics.ticketsByServiceType.slice(0, 10).map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+              <div className="w-40% p-4">
+                <h4 className="text-sm font-medium mb-2">Tipos de Registro</h4>
+                <div className="space-y-1 max-h-64 overflow-y-auto">
+                  {analytics.ticketsByServiceType.slice(0, 10).map((item, index) => (
                     <div key={index} className="flex justify-between text-xs">
                       <span className="truncate">{item.name}</span>
                       <span>{item.count}</span>
