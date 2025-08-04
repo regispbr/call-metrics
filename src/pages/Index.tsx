@@ -38,7 +38,6 @@ import {
   Building,
   UserCheck,
   Timer,
-  RotateCcw,
   TrendingDown,
   Activity,
   Filter,
@@ -246,10 +245,10 @@ const Index = () => {
             variant="success"
           />
           <MetricCard
-            title="Tickets Reabertos"
-            value={`${analytics.reopenedTickets} (${analytics.reopenedPercentage}%)`}
-            icon={RotateCcw}
-            variant="warning"
+            title="Tickets Encerrados"
+            value={analytics.closedTickets}
+            icon={CheckCircle}
+            variant="success"
           />
         </div>
 

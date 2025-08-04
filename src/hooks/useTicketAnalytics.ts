@@ -24,9 +24,8 @@ interface TicketData {
 
 export const useTicketAnalytics = (data: TicketData[]) => {
   return useMemo(() => {
-    // Filter out tickets with excluded statuses from all calculations  
-    const excludedStatuses = ["Deletado", "Mesclado", "Encerrado", "Mesclado e deletado"];
-    const filteredData = data?.filter(ticket => !excludedStatuses.includes(ticket.Status)) || [];
+    // Use all data for indicators calculations
+    const filteredData = data || [];
     
     if (!filteredData || filteredData.length === 0) {
       return {
@@ -53,6 +52,7 @@ export const useTicketAnalytics = (data: TicketData[]) => {
         requestsByDay: [],
         ticketsNearSLA: [],
         nearSLACount: 0,
+        closedTickets: 0,
         filterOptions: {
           empresas: [],
           status: [],
@@ -183,11 +183,10 @@ export const useTicketAnalytics = (data: TicketData[]) => {
       Math.round(waitingManufacturerTimes.reduce((a, b) => a + b, 0) / waitingManufacturerTimes.length) || 0
     );
 
-    // Reopened tickets
-    const reopenedTickets = filteredData.filter(ticket => 
-      ticket["contador de Reabertura"] > 0
+    // Closed tickets
+    const closedTickets = filteredData.filter(ticket => 
+      ticket.Status === "Encerrado"
     ).length;
-    const reopenedPercentage = Math.round((reopenedTickets / totalTickets) * 100);
 
     // SLA breach analysis
     const slaBreachCount = filteredData.filter(ticket => {
@@ -312,8 +311,7 @@ export const useTicketAnalytics = (data: TicketData[]) => {
       teamResolutionRate,
       avgResponseTime,
       avgSolutionTime,
-      reopenedTickets,
-      reopenedPercentage,
+      closedTickets,
       slaBreachPercentage,
       slaBreachCount,
       ticketsByPriority,
