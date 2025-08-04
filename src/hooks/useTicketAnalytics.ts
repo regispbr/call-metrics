@@ -66,6 +66,36 @@ export const useTicketAnalytics = (data: TicketData[]) => {
       };
     }
 
+    // Status mapping function
+    const getGroupedStatus = (status: string) => {
+      const statusMap: Record<string, string> = {
+        'Novo': 'Novo',
+        'Encerrado': 'Encerrado',
+        'Aguardando interno': 'Aguardando Interno',
+        'Em atendimento': 'Em atendimento',
+        'Aguardando interação': 'Aguardando Interno',
+        'Em análise/investigação': 'Em atendimento',
+        'Respondido pelo cliente': 'Em atendimento',
+        'Encaminhado - N1': 'Em atendimento',
+        'Encaminhado - N2': 'Em atendimento',
+        'Encaminhado - N3': 'Em atendimento',
+        'Encaminhado - TAC': 'Aguardando Fabricante',
+        'Encaminhado - Gestão': 'Aguardando Interno',
+        'Aguardando cliente': 'Aguardando Cliente',
+        'Aguardando fabricante': 'Aguardando Fabricante',
+        'Aguardando terceiro': 'Aguardando Interno',
+        'Aguardando aprovação para encerrar': 'Aguardando Cliente',
+        'Em processo de cotação': 'Em processo de cotação',
+        'Sessão Agendada': 'Suspenso',
+        'Validando Contrato/Garantia': 'Aguardando Interno',
+        'Suspenso': 'Suspenso',
+        'Mesclado e Deletado': 'Deletado',
+        'Mesclado e Encerrado': 'Deletado',
+        'Deletado': 'Deletado'
+      };
+      return statusMap[status] || status;
+    };
+
     // Helper function to parse time strings
     const parseTimeToMinutes = (timeStr: string) => {
       if (!timeStr || timeStr === "00:00") return 0;
@@ -284,6 +314,31 @@ export const useTicketAnalytics = (data: TicketData[]) => {
       avgTime: formatMinutesToTime(Math.round(times.reduce((a, b) => a + b, 0) / times.length))
     }));
 
+    // Tickets by grouped status
+    const ticketsByGroupedStatus = Object.entries(
+      filteredData.reduce((acc, ticket) => {
+        const groupedStatus = getGroupedStatus(ticket.Status);
+        acc[groupedStatus] = (acc[groupedStatus] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>)
+    ).map(([name, count]) => ({ 
+      name, 
+      count,
+      percentage: ((count / totalTickets) * 100).toFixed(1)
+    }))
+    .sort((a, b) => b.count - a.count);
+
+    // Individual grouped status counts
+    const novoTickets = filteredData.filter(ticket => getGroupedStatus(ticket.Status) === "Novo").length;
+    const emAtendimentoTickets = filteredData.filter(ticket => getGroupedStatus(ticket.Status) === "Em atendimento").length;
+    const aguardandoInternoTickets = filteredData.filter(ticket => getGroupedStatus(ticket.Status) === "Aguardando Interno").length;
+    const aguardandoClienteTickets = filteredData.filter(ticket => getGroupedStatus(ticket.Status) === "Aguardando Cliente").length;
+    const aguardandoFabricanteTickets = filteredData.filter(ticket => getGroupedStatus(ticket.Status) === "Aguardando Fabricante").length;
+    const emProcessoCotacaoTickets = filteredData.filter(ticket => getGroupedStatus(ticket.Status) === "Em processo de cotação").length;
+    const suspensoTickets = filteredData.filter(ticket => getGroupedStatus(ticket.Status) === "Suspenso").length;
+    const encerradoTickets = filteredData.filter(ticket => getGroupedStatus(ticket.Status) === "Encerrado").length;
+    const deletadoTickets = filteredData.filter(ticket => getGroupedStatus(ticket.Status) === "Deletado").length;
+
     // Tickets próximos ao SLA (2 horas)
     const now = new Date();
     const ticketsNearSLA = filteredData.filter(ticket => {
@@ -343,6 +398,17 @@ export const useTicketAnalytics = (data: TicketData[]) => {
       nearSLACount: ticketsNearSLA.length,
       filterOptions,
       rawData: filteredData,
+      // Grouped status indicators
+      ticketsByGroupedStatus,
+      novoTickets,
+      emAtendimentoTickets,
+      aguardandoInternoTickets,
+      aguardandoClienteTickets,
+      aguardandoFabricanteTickets,
+      emProcessoCotacaoTickets,
+      suspensoTickets,
+      encerradoTickets,
+      deletadoTickets,
     };
   }, [data]);
 };

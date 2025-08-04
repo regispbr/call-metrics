@@ -44,7 +44,14 @@ import {
   Filter,
   Search,
   Download,
-  FileText
+  FileText,
+  PlayCircle,
+  PauseCircle,
+  UserX,
+  Factory,
+  ShoppingCart,
+  XCircle,
+  Trash2
 } from "lucide-react";
 
 const Index = () => {
@@ -297,6 +304,67 @@ const Index = () => {
             icon={Clock}
             variant={analytics.nearSLACount > 0 ? "warning" : "success"}
           />
+        </div>
+
+        {/* Status Agrupado Metrics */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold">Indicadores por Status Agrupado</h3>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            <MetricCard
+              title="Novo"
+              value={analytics.novoTickets}
+              icon={PlayCircle}
+              variant="info"
+            />
+            <MetricCard
+              title="Em Atendimento"
+              value={analytics.emAtendimentoTickets}
+              icon={Activity}
+              variant="primary"
+            />
+            <MetricCard
+              title="Aguardando Interno"
+              value={analytics.aguardandoInternoTickets}
+              icon={Timer}
+              variant="warning"
+            />
+            <MetricCard
+              title="Aguardando Cliente"
+              value={analytics.aguardandoClienteTickets}
+              icon={UserX}
+              variant="warning"
+            />
+            <MetricCard
+              title="Aguardando Fabricante"
+              value={analytics.aguardandoFabricanteTickets}
+              icon={Factory}
+              variant="warning"
+            />
+            <MetricCard
+              title="Em Processo de Cotação"
+              value={analytics.emProcessoCotacaoTickets}
+              icon={ShoppingCart}
+              variant="info"
+            />
+            <MetricCard
+              title="Suspenso"
+              value={analytics.suspensoTickets}
+              icon={PauseCircle}
+              variant="default"
+            />
+            <MetricCard
+              title="Encerrado"
+              value={analytics.encerradoTickets}
+              icon={CheckCircle}
+              variant="success"
+            />
+            <MetricCard
+              title="Deletado"
+              value={analytics.deletadoTickets}
+              icon={Trash2}
+              variant="default"
+            />
+          </div>
         </div>
 
         {/* Tickets Near SLA */}
