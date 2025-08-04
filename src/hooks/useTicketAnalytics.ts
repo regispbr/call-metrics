@@ -183,6 +183,12 @@ export const useTicketAnalytics = (data: TicketData[]) => {
       Math.round(waitingManufacturerTimes.reduce((a, b) => a + b, 0) / waitingManufacturerTimes.length) || 0
     );
 
+    // Reopened tickets
+    const reopenedTickets = filteredData.filter(ticket => 
+      ticket["contador de Reabertura"] > 0
+    ).length;
+    const reopenedPercentage = Math.round((reopenedTickets / totalTickets) * 100);
+
     // Closed tickets
     const closedTickets = filteredData.filter(ticket => 
       ticket.Status === "Encerrado"
@@ -281,7 +287,7 @@ export const useTicketAnalytics = (data: TicketData[]) => {
     // Tickets próximos ao SLA (2 horas)
     const now = new Date();
     const ticketsNearSLA = filteredData.filter(ticket => {
-      if (!ticket["Prazo de SLA"] || ticket.Status === "Resolvido" || ticket.Status === "Fechado") return false;
+      if (!ticket["Prazo de SLA"] || ticket.Status === "Encerrado" || ticket.Status === "Mesclado e Encerrado") return false;
       const slaDate = parseDate(ticket["Prazo de SLA"]);
       const timeDiff = slaDate.getTime() - now.getTime();
       const hoursUntilSLA = timeDiff / (1000 * 60 * 60);
@@ -311,6 +317,8 @@ export const useTicketAnalytics = (data: TicketData[]) => {
       teamResolutionRate,
       avgResponseTime,
       avgSolutionTime,
+      reopenedTickets,
+      reopenedPercentage,
       closedTickets,
       slaBreachPercentage,
       slaBreachCount,

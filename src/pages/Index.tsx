@@ -38,6 +38,7 @@ import {
   Building,
   UserCheck,
   Timer,
+  RotateCcw,
   TrendingDown,
   Activity,
   Filter,
@@ -164,7 +165,7 @@ const Index = () => {
     return analytics.rawData.filter(ticket => {
       return (
         // For active tickets, exclude additional statuses
-        !["Deletado", "Mesclado", "Encerrado", "Mesclado e deletado"].includes(ticket.Status) &&
+        !["Deletado", "Mesclado", "Encerrado", "Mesclado e deletado", "Mesclado e Encerrado"].includes(ticket.Status) &&
         (!tableFilters.id || ticket["#"].toString().includes(tableFilters.id)) &&
         (!tableFilters.tipo || ticket["Tipo de Registro de Serviço"].toLowerCase().includes(tableFilters.tipo.toLowerCase())) &&
         (!tableFilters.dataRequisicao || ticket["Data de requisição"].includes(tableFilters.dataRequisicao)) &&
@@ -243,6 +244,12 @@ const Index = () => {
             value={analytics.topDayOfWeek}
             icon={Calendar}
             variant="success"
+          />
+          <MetricCard
+            title="% Tickets Reabertos"
+            value={`${analytics.reopenedTickets} (${analytics.reopenedPercentage}%)`}
+            icon={RotateCcw}
+            variant="warning"
           />
           <MetricCard
             title="Tickets Encerrados"
