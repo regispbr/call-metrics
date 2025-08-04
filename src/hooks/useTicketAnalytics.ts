@@ -294,6 +294,14 @@ export const useTicketAnalytics = (data: TicketData[]) => {
       return hoursUntilSLA <= 2 && hoursUntilSLA > 0;
     });
 
+    console.log('Tickets Near SLA Debug:', {
+      totalFilteredData: filteredData.length,
+      ticketsWithSLA: filteredData.filter(t => t["Prazo de SLA"]).length,
+      activeTickets: filteredData.filter(t => t.Status !== "Encerrado" && t.Status !== "Mesclado e Encerrado").length,
+      ticketsNearSLA: ticketsNearSLA.length,
+      nearSLATickets: ticketsNearSLA.map(t => ({ id: t["#"], sla: t["Prazo de SLA"], status: t.Status }))
+    });
+
 
     // Filter options with sorting
     const filterOptions = {

@@ -284,18 +284,12 @@ const Index = () => {
         </div>
 
         {/* SLA Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <MetricCard
             title="% Descumprimento SLA"
             value={`${analytics.slaBreachCount} (${analytics.slaBreachPercentage}%)`}
             icon={AlertTriangle}
             variant={analytics.slaBreachPercentage > 20 ? "warning" : "success"}
-          />
-          <MetricCard
-            title="% Tickets Reabertos"
-            value={`${analytics.reopenedPercentage}%`}
-            icon={TrendingDown}
-            variant={analytics.reopenedPercentage > 10 ? "warning" : "success"}
           />
           <MetricCard
             title="Tickets Próximos ao SLA"
