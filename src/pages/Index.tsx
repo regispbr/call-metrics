@@ -232,83 +232,95 @@ const Index = () => {
           activeFilters={activeFilters}
         />
 
-        {/* Key Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <MetricCard
-            title="Total de Tickets"
-            value={analytics.totalTickets.toLocaleString()}
-            icon={TicketIcon}
-            variant="primary"
-          />
-          <MetricCard
-            title="Média/Dia"
-            value={analytics.avgRequestsPerDay}
-            icon={TrendingUp}
-            variant="info"
-          />
-          <MetricCard
-            title="Dia Mais Ativo"
-            value={analytics.topDayOfWeek}
-            icon={Calendar}
-            variant="success"
-          />
-          <MetricCard
-            title="% Tickets Reabertos"
-            value={`${analytics.reopenedTickets} (${analytics.reopenedPercentage}%)`}
-            icon={RotateCcw}
-            variant="warning"
-          />
-          <MetricCard
-            title="Tickets Encerrados"
-            value={analytics.closedTickets}
-            icon={CheckCircle}
-            variant="success"
-          />
-        </div>
-
-        {/* Time Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <MetricCard
-            title="Tempo Médio de Resposta"
-            value={analytics.avgResponseTime}
-            icon={Timer}
-          />
-          <MetricCard
-            title="Tempo Médio de Solução"
-            value={analytics.avgSolutionTime}
-            icon={CheckCircle}
-          />
-          <MetricCard
-            title="Aguardando Cliente"
-            value={analytics.avgWaitingClient}
-            icon={Users}
-          />
-          <MetricCard
-            title="Aguardando Fabricante"
-            value={analytics.avgWaitingManufacturer}
-            icon={Building}
-          />
-        </div>
-
-        {/* SLA Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <MetricCard
-            title="% Descumprimento SLA"
-            value={`${analytics.slaBreachCount} (${analytics.slaBreachPercentage}%)`}
-            icon={AlertTriangle}
-            variant={analytics.slaBreachPercentage > 20 ? "warning" : "success"}
-          />
-          <MetricCard
-            title="Tickets Próximos ao SLA"
-            value={`${analytics.nearSLACount}`}
-            icon={Clock}
-            variant={analytics.nearSLACount > 0 ? "warning" : "success"}
-          />
-        </div>
-
-        {/* Status Agrupado Metrics */}
+        {/* Resumo Executivo */}
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Indicadores por Status Agrupado</h3>
+          <h2 className="text-xl font-semibold">Resumo Executivo</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <MetricCard
+              title="Total de Tickets"
+              value={analytics.totalTickets.toLocaleString()}
+              icon={TicketIcon}
+              variant="primary"
+            />
+            <MetricCard
+              title="Tickets Encerrados"
+              value={analytics.closedTickets}
+              icon={CheckCircle}
+              variant="success"
+            />
+            <MetricCard
+              title="Média/Dia"
+              value={analytics.avgRequestsPerDay}
+              icon={TrendingUp}
+              variant="info"
+            />
+            <MetricCard
+              title="Dia Mais Ativo"
+              value={analytics.topDayOfWeek}
+              icon={Calendar}
+              variant="info"
+            />
+            <MetricCard
+              title="% Tickets Reabertos"
+              value={`${analytics.reopenedTickets} (${analytics.reopenedPercentage}%)`}
+              icon={RotateCcw}
+              variant="warning"
+            />
+          </div>
+        </div>
+
+        {/* SLA & Criticidade */}
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold">SLA & Criticidade</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <MetricCard
+              title="% Descumprimento SLA"
+              value={`${analytics.slaBreachCount} (${analytics.slaBreachPercentage}%)`}
+              icon={AlertTriangle}
+              variant={analytics.slaBreachPercentage > 20 ? "warning" : "success"}
+            />
+            <MetricCard
+              title="Tickets Próximos ao Vencimento SLA"
+              value={`${analytics.nearSLACount}`}
+              icon={Clock}
+              variant={analytics.nearSLACount > 0 ? "warning" : "success"}
+            />
+          </div>
+        </div>
+
+        {/* Tickets Próximos ao SLA */}
+        {analytics.nearSLACount > 0 && (
+          <Card className="border-warning/50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-warning">
+                <Clock className="h-5 w-5" />
+                Tickets Próximos ao Vencimento do SLA (próximas 2 horas)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2 max-h-48 overflow-y-auto">
+                {analytics.ticketsNearSLA.map((ticket, index) => (
+                  <div key={index} className="flex justify-between items-center p-3 bg-warning/10 border border-warning/20 rounded-md">
+                    <div>
+                      <span className="font-medium">#{ticket["#"]}</span> - {ticket["Título"]}
+                      <div className="text-xs text-muted-foreground">
+                        {ticket.Empresa} | {ticket["Equipe de atendimento"]}
+                      </div>
+                    </div>
+                    <div className="text-xs text-right">
+                      <div>SLA: {ticket["Prazo de SLA"]}</div>
+                      <div className="text-warning font-medium">Próximo ao vencimento</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Status dos Tickets */}
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold">Status dos Tickets</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
             <MetricCard
               title="Novo"
@@ -367,35 +379,37 @@ const Index = () => {
           </div>
         </div>
 
-        {/* Tickets Near SLA */}
-        {analytics.nearSLACount > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Clock className="h-5 w-5" />
-                Tickets Próximos ao Vencimento do SLA (próximas 2 horas)
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2 max-h-48 overflow-y-auto">
-                {analytics.ticketsNearSLA.map((ticket, index) => (
-                  <div key={index} className="flex justify-between items-center p-2 bg-muted rounded-md">
-                    <div>
-                      <span className="font-medium">#{ticket["#"]}</span> - {ticket["Título"]}
-                      <div className="text-xs text-muted-foreground">
-                        {ticket.Empresa} | {ticket["Equipe de atendimento"]}
-                      </div>
-                    </div>
-                    <div className="text-xs text-right">
-                      <div>SLA: {ticket["Prazo de SLA"]}</div>
-                      <div className="text-warning">Próximo ao vencimento</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+        {/* Tempos Médios */}
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold">Indicadores de Tempo</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <MetricCard
+              title="Tempo Médio de Resposta"
+              value={analytics.avgResponseTime}
+              icon={Timer}
+              variant="info"
+            />
+            <MetricCard
+              title="Tempo Médio de Solução"
+              value={analytics.avgSolutionTime}
+              icon={CheckCircle}
+              variant="info"
+            />
+            <MetricCard
+              title="Aguardando Cliente"
+              value={analytics.avgWaitingClient}
+              icon={Users}
+              variant="warning"
+            />
+            <MetricCard
+              title="Aguardando Fabricante"
+              value={analytics.avgWaitingManufacturer}
+              icon={Building}
+              variant="warning"
+            />
+          </div>
+        </div>
+
 
         {/* Team Resolution Rate */}
         <ChartCard title="Taxa de Resolução por Equipe (%)" icon={CheckCircle}>

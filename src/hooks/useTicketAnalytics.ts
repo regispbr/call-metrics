@@ -339,14 +339,21 @@ export const useTicketAnalytics = (data: TicketData[]) => {
     const encerradoTickets = filteredData.filter(ticket => getGroupedStatus(ticket.Status) === "Encerrado").length;
     const deletadoTickets = filteredData.filter(ticket => getGroupedStatus(ticket.Status) === "Deletado").length;
 
-    // Tickets próximos ao SLA (2 horas)
+    // Tickets próximos ao SLA (próximas 24 horas para teste)
     const now = new Date();
     const ticketsNearSLA = filteredData.filter(ticket => {
       if (!ticket["Prazo de SLA"] || ticket.Status === "Encerrado" || ticket.Status === "Mesclado e Encerrado") return false;
-      const slaDate = parseDate(ticket["Prazo de SLA"]);
-      const timeDiff = slaDate.getTime() - now.getTime();
-      const hoursUntilSLA = timeDiff / (1000 * 60 * 60);
-      return hoursUntilSLA <= 2 && hoursUntilSLA > 0;
+      
+      try {
+        const slaDate = parseDate(ticket["Prazo de SLA"]);
+        const timeDiff = slaDate.getTime() - now.getTime();
+        const hoursUntilSLA = timeDiff / (1000 * 60 * 60);
+        
+        // Expandindo para 24 horas para teste
+        return hoursUntilSLA <= 24 && hoursUntilSLA > 0;
+      } catch (error) {
+        return false;
+      }
     });
 
     console.log('Tickets Near SLA Debug:', {
@@ -354,6 +361,7 @@ export const useTicketAnalytics = (data: TicketData[]) => {
       ticketsWithSLA: filteredData.filter(t => t["Prazo de SLA"]).length,
       activeTickets: filteredData.filter(t => t.Status !== "Encerrado" && t.Status !== "Mesclado e Encerrado").length,
       ticketsNearSLA: ticketsNearSLA.length,
+      sampleSLADates: filteredData.slice(0, 3).map(t => ({ id: t["#"], sla: t["Prazo de SLA"], status: t.Status })),
       nearSLATickets: ticketsNearSLA.map(t => ({ id: t["#"], sla: t["Prazo de SLA"], status: t.Status }))
     });
 
