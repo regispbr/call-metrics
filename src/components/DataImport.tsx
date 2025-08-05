@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Upload, FileText, AlertCircle, FileUp } from "lucide-react";
+import { Upload, FileText, AlertCircle, FileUp, FolderOpen } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import Papa from "papaparse";
 
@@ -17,6 +17,7 @@ export const DataImport = ({ onDataImport }: DataImportProps) => {
   const [jsonData, setJsonData] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [directoryPath, setDirectoryPath] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -188,10 +189,14 @@ export const DataImport = ({ onDataImport }: DataImportProps) => {
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="csv" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="csv" className="flex items-center gap-2">
               <FileUp className="h-4 w-4" />
               Upload CSV
+            </TabsTrigger>
+            <TabsTrigger value="directory" className="flex items-center gap-2">
+              <FolderOpen className="h-4 w-4" />
+              Diretório
             </TabsTrigger>
             <TabsTrigger value="json" className="flex items-center gap-2">
               <FileText className="h-4 w-4" />
@@ -232,6 +237,39 @@ export const DataImport = ({ onDataImport }: DataImportProps) => {
               <div className="text-sm text-success-foreground">
                 <p className="font-medium">Formato CSV esperado:</p>
                 <p>Primeira linha deve conter os cabeçalhos das colunas. Use a mesma estrutura das colunas do seu sistema de tickets.</p>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="directory" className="space-y-4">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="directory-path">Caminho do diretório</Label>
+                <Input
+                  id="directory-path"
+                  type="text"
+                  placeholder="ex: C:\Documents\Tickets\"
+                  value={directoryPath}
+                  onChange={(e) => setDirectoryPath(e.target.value)}
+                  className="font-mono"
+                />
+              </div>
+              
+              <Button 
+                variant="outline"
+                disabled
+                className="w-full"
+              >
+                <FolderOpen className="h-4 w-4 mr-2" />
+                Funcionalidade em desenvolvimento
+              </Button>
+            </div>
+
+            <div className="flex items-start gap-2 p-3 bg-warning-light rounded-lg">
+              <AlertCircle className="h-4 w-4 text-warning mt-0.5" />
+              <div className="text-sm text-warning-foreground">
+                <p className="font-medium">Funcionalidade em desenvolvimento:</p>
+                <p>A opção de importar diretamente de um diretório será implementada em breve. Por enquanto, use o upload de arquivo CSV.</p>
               </div>
             </div>
           </TabsContent>

@@ -21,7 +21,7 @@ import {
 } from "recharts";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -114,6 +114,10 @@ const Index = () => {
   }, [ticketData, activeFilters]);
 
   const analytics = useTicketAnalytics(filteredData);
+  const {
+    ticketsNearSLA,
+    ticketsWithoutUpdates,
+  } = analytics;
 
   const handleDataImport = (data: any[]) => {
     setTicketData(data);
@@ -272,7 +276,7 @@ const Index = () => {
         {/* SLA & Criticidade */}
         <div className="space-y-4">
           <h2 className="text-xl font-semibold">SLA & Criticidade</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <MetricCard
               title="% Descumprimento SLA"
               value={`${analytics.slaBreachCount} (${analytics.slaBreachPercentage}%)`}
@@ -280,36 +284,92 @@ const Index = () => {
               variant={analytics.slaBreachPercentage > 20 ? "warning" : "success"}
             />
             <MetricCard
-              title="Tickets Próximos ao Vencimento SLA"
-              value={`${analytics.nearSLACount}`}
+              title="Tickets Próximos ao Vencimento do SLA"
+              value={ticketsNearSLA?.length || 0}
+              icon={AlertTriangle}
+              variant="warning"
+            />
+            <MetricCard
+              title="Tickets Sem Atualização (1h)"
+              value={ticketsWithoutUpdates?.length || 0}
               icon={Clock}
-              variant={analytics.nearSLACount > 0 ? "warning" : "success"}
+              variant="warning"
             />
           </div>
         </div>
 
         {/* Tickets Próximos ao SLA */}
-        {analytics.nearSLACount > 0 && (
+        {ticketsNearSLA && ticketsNearSLA.length > 0 && (
+          <Card className="border-warning/50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-warning">
+                <AlertTriangle className="h-5 w-5" />
+                Tickets Próximos ao Vencimento do SLA
+              </CardTitle>
+              <CardDescription>
+                Tickets que vencem nas próximas 2 horas
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {ticketsNearSLA.slice(0, 10).map((ticket, index) => (
+                  <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex-1">
+                      <div className="font-medium">#{ticket["#"]}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {ticket["Categoria"]} - {ticket["Subcategoria"]}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        Solicitante: {ticket["Usuário solicitante"]}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm font-medium text-warning">
+                        Vence: {ticket["Prazo de SLA"]}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        Status: {ticket["Status"]}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Tickets Sem Atualização */}
+        {ticketsWithoutUpdates && ticketsWithoutUpdates.length > 0 && (
           <Card className="border-warning/50">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-warning">
                 <Clock className="h-5 w-5" />
-                Tickets Próximos ao Vencimento do SLA (próximas 2 horas)
+                Tickets Sem Atualização
               </CardTitle>
+              <CardDescription>
+                Tickets ativos sem atualização na última hora
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2 max-h-48 overflow-y-auto">
-                {analytics.ticketsNearSLA.map((ticket, index) => (
-                  <div key={index} className="flex justify-between items-center p-3 bg-warning/10 border border-warning/20 rounded-md">
-                    <div>
-                      <span className="font-medium">#{ticket["#"]}</span> - {ticket["Título"]}
-                      <div className="text-xs text-muted-foreground">
-                        {ticket.Empresa} | {ticket["Equipe de atendimento"]}
+              <div className="space-y-3">
+                {ticketsWithoutUpdates.slice(0, 10).map((ticket, index) => (
+                  <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex-1">
+                      <div className="font-medium">#{ticket["#"]}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {ticket["Categoria"]} - {ticket["Subcategoria"]}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        Solicitante: {ticket["Usuário solicitante"]}
                       </div>
                     </div>
-                    <div className="text-xs text-right">
-                      <div>SLA: {ticket["Prazo de SLA"]}</div>
-                      <div className="text-warning font-medium">Próximo ao vencimento</div>
+                    <div className="text-right">
+                      <div className="text-sm font-medium text-warning">
+                        Última atualização: {ticket["Data de modificação"]}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        Status: {ticket["Status"]}
+                      </div>
                     </div>
                   </div>
                 ))}

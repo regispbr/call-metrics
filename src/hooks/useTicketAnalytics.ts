@@ -20,6 +20,7 @@ interface TicketData {
   "Atendente atribuído": string;
   "contador de Reabertura": number;
   "Prioridade": string;
+  "Data de modificação"?: string;
 }
 
 export const useTicketAnalytics = (data: TicketData[]) => {
@@ -339,7 +340,7 @@ export const useTicketAnalytics = (data: TicketData[]) => {
     const encerradoTickets = filteredData.filter(ticket => getGroupedStatus(ticket.Status) === "Encerrado").length;
     const deletadoTickets = filteredData.filter(ticket => getGroupedStatus(ticket.Status) === "Deletado").length;
 
-    // Tickets próximos ao SLA (próximas 24 horas para teste)
+    // Tickets próximos ao SLA (próximas 2 horas)
     const now = new Date();
     const ticketsNearSLA = filteredData.filter(ticket => {
       if (!ticket["Prazo de SLA"] || ticket.Status === "Encerrado" || ticket.Status === "Mesclado e Encerrado") return false;
@@ -349,20 +350,29 @@ export const useTicketAnalytics = (data: TicketData[]) => {
         const timeDiff = slaDate.getTime() - now.getTime();
         const hoursUntilSLA = timeDiff / (1000 * 60 * 60);
         
-        // Expandindo para 24 horas para teste
-        return hoursUntilSLA <= 24 && hoursUntilSLA > 0;
+        return hoursUntilSLA <= 2 && hoursUntilSLA > 0;
       } catch (error) {
         return false;
       }
     });
 
-    console.log('Tickets Near SLA Debug:', {
-      totalFilteredData: filteredData.length,
-      ticketsWithSLA: filteredData.filter(t => t["Prazo de SLA"]).length,
-      activeTickets: filteredData.filter(t => t.Status !== "Encerrado" && t.Status !== "Mesclado e Encerrado").length,
-      ticketsNearSLA: ticketsNearSLA.length,
-      sampleSLADates: filteredData.slice(0, 3).map(t => ({ id: t["#"], sla: t["Prazo de SLA"], status: t.Status })),
-      nearSLATickets: ticketsNearSLA.map(t => ({ id: t["#"], sla: t["Prazo de SLA"], status: t.Status }))
+    // Tickets sem atualização na última hora
+    const ticketsWithoutUpdates = filteredData.filter(ticket => {
+      // Ignore closed and deleted tickets for this list only
+      const ignoredStatuses = ["Encerrado", "Mesclado e Encerrado", "Deletado", "Mesclado e Deletado"];
+      if (ignoredStatuses.includes(ticket.Status)) return false;
+      
+      if (!ticket["Data de modificação"]) return false;
+      
+      try {
+        const modificationDate = parseDate(ticket["Data de modificação"]);
+        const timeDiff = now.getTime() - modificationDate.getTime();
+        const hoursWithoutUpdate = timeDiff / (1000 * 60 * 60);
+        
+        return hoursWithoutUpdate >= 1;
+      } catch (error) {
+        return false;
+      }
     });
 
 
@@ -403,6 +413,7 @@ export const useTicketAnalytics = (data: TicketData[]) => {
       solutionTimeByTeam,
       requestsByDay: Object.entries(requestsByDay).map(([date, count]) => ({ date, count })),
       ticketsNearSLA,
+      ticketsWithoutUpdates,
       nearSLACount: ticketsNearSLA.length,
       filterOptions,
       rawData: filteredData,
