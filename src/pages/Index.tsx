@@ -226,6 +226,16 @@ const Index = () => {
               <Download className="h-4 w-4 mr-2" />
               Exportar PDF
             </Button>
+            <Button 
+              onClick={() => {
+                localStorage.removeItem("dashboard_auth");
+                window.location.reload();
+              }} 
+              variant="outline" 
+              size="sm"
+            >
+              Sair
+            </Button>
             <DataImport onDataImport={handleDataImport} />
           </div>
         </div>
