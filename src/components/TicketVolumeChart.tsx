@@ -49,19 +49,21 @@ export const TicketVolumeChart = ({ data }: TicketVolumeChartProps) => {
         const date = parseDate(ticket["Data de requisição"]);
         
         let key: string;
+        let displayDate: string;
+        
         if (viewMode === "day") {
           key = format(startOfDay(date), "yyyy-MM-dd");
+          displayDate = format(date, "dd/MM", { locale: ptBR });
         } else {
           key = format(startOfHour(date), "yyyy-MM-dd HH:00");
+          displayDate = format(date, "dd/MM HH:mm", { locale: ptBR });
         }
 
         if (!grouped[key]) {
           grouped[key] = {
             date: key,
             tickets: 0,
-            displayDate: viewMode === "day" 
-              ? format(date, "dd/MM", { locale: ptBR })
-              : format(date, "dd/MM HH:mm", { locale: ptBR })
+            displayDate: displayDate
           };
         }
         grouped[key].tickets++;
