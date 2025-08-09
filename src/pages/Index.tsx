@@ -19,6 +19,7 @@ import {
   Line,
   Legend
 } from "recharts";
+import { TicketVolumeChart } from "@/components/TicketVolumeChart";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -469,6 +470,9 @@ const Index = () => {
             />
           </div>
         </div>
+
+        {/* Volume de Tickets com Zoom */}
+        <TicketVolumeChart data={analytics.rawData || []} />
 
 
         {/* Team Resolution Rate */}
