@@ -53,7 +53,7 @@ export const TicketVolumeChart = ({ data }: TicketVolumeChartProps) => {
         
         if (viewMode === "day") {
           key = format(startOfDay(date), "yyyy-MM-dd");
-          displayDate = format(date, "dd/MM", { locale: ptBR });
+          displayDate = format(date, "dd/MM HH:mm", { locale: ptBR });
         } else {
           key = format(startOfHour(date), "yyyy-MM-dd HH:00");
           displayDate = format(date, "dd/MM HH:mm", { locale: ptBR });
