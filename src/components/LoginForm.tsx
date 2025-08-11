@@ -125,16 +125,6 @@ export const LoginForm = ({ onLogin }: LoginFormProps) => {
               {loading ? "Entrando..." : "Entrar"}
             </Button>
           </form>
-
-          <div className="mt-6 p-4 bg-muted/50 rounded-lg">
-            <p className="text-sm text-muted-foreground text-center font-medium">
-              Credenciais de Demonstração
-            </p>
-            <div className="mt-2 space-y-1 text-xs text-muted-foreground text-center">
-              <p><strong>Usuário:</strong> admin</p>
-              <p><strong>Senha:</strong> dashboard123</p>
-            </div>
-          </div>
         </CardContent>
       </Card>
     </div>
